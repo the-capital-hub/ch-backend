@@ -11,6 +11,28 @@ const VCSchema = new Schema(
         type:String,
         required: true
     },
+    facebook:{
+        type:String
+    },
+    instagram:{
+        type:String
+    },
+    linkedin:{
+        type:String
+    },
+    twitter:{
+        type:String
+    },
+    total_portfolio:{
+        type:String
+    },
+    current_fund_corpus:{
+        type:String
+    },
+    total_fund_corpus:{
+        type:String
+    },
+
     stage_focus:[{
         type:String
     }],
