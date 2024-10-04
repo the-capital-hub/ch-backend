@@ -760,6 +760,48 @@ export const getExplore = async (filters) => {
         message: "Founder data retrieved",
         data: founders,
       };
+
+            // for VC
+    } else if (type === "VC") {
+      const query = {};
+      if (sector) {
+        query.sector = sector
+      }
+      if (city) {
+        query.location = city;
+      }
+      const vcQuery = {};
+      if (gender) {
+        vcQuery.gender = gender;
+      }
+      if (previousExits) {
+        vcQuery.previousExits = previousExits;
+      }
+      if (yearsOfExperience) {
+        vcQuery.yearsOfExperience = yearsOfExperience;
+      }
+      if (education) {
+        vcQuery.education = education;
+      }
+      if (diversityMetrics) {
+        vcQuery.diversityMetrics = { $in: [diversityMetrics] };
+      }
+      if (searchQuery) {
+        vcQuery.firstName = { $regex: new RegExp(`^${searchQuery}`, 'i') };
+      }
+      const vc = await UserModel.find({
+        isVc: true,
+        ...vcQuery,
+        userStatus: "active",
+      }).select("-password")
+        .populate("startUp");
+      return {
+        status: 200,
+        message: "vc data retrieved",
+        data: vc,
+      };
+
+
     } else {
       return {
         status: 400,

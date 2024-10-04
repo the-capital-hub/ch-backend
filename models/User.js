@@ -175,6 +175,10 @@ const userSchema = new Schema(
       type: String,
       default: false,
     },
+    isVc: {
+      type: Boolean,
+      default: false,
+    },
     secretKey: {
       type: String,
     },
