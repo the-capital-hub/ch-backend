@@ -766,7 +766,7 @@ export const getExplore = async (filters) => {
       };
 
             // for VC
-    } else if (type === "VC") {
+    } else if (type === "vc") {
       const query = {};
       if (sector_focus) {
         query.sector_focus = sector_focus;
