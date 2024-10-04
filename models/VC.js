@@ -30,7 +30,10 @@ const VCSchema = new Schema(
     people:[{
         type: Schema.Types.ObjectId,
         ref: "Users",
-    }]
+    }],
+    description:{
+        type:String
+    }
 },
 
 
