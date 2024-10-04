@@ -841,7 +841,7 @@ export const getExploreFilters = async (type) => {
         },
       };
     }
-    else if (type === "VC") {
+    else if (type === "vc") {
       // const founderSectors = await StartUpModel.distinct("sector");
       const founderCities = await StartUpModel.distinct("location");
       return {
