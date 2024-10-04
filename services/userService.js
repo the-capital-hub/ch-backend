@@ -2,6 +2,7 @@ import { UserModel } from "../models/User.js";
 //import { comparePassword } from "../utils/passwordManager.js";
 import { StartUpModel } from "../models/startUp.js";
 import { InvestorModel } from "../models/Investor.js";
+import { VCModel } from "../models/VC.js";
 import { cloudinary } from "../utils/uploadImage.js";
 import jwt from "jsonwebtoken";
 import { secretKey } from "../constants/config.js";
@@ -640,6 +641,9 @@ export const getExplore = async (filters) => {
       age,
       education,
       searchQuery,
+      sector_focus,
+      stage_focus,
+      ticket_size
     } = filters;
 
     // for startups
@@ -764,41 +768,25 @@ export const getExplore = async (filters) => {
             // for VC
     } else if (type === "VC") {
       const query = {};
-      if (sector) {
-        query.sector = sector
+      if (sector_focus) {
+        query.sector_focus = sector_focus;
       }
-      if (city) {
-        query.location = city;
+      if (stage_focus) {
+        query.stage_focus = stage_focus;
       }
-      const vcQuery = {};
-      if (gender) {
-        vcQuery.gender = gender;
+      if (ticket_size) {
+        query.ticket_size = { $gte: size };
       }
-      if (previousExits) {
-        vcQuery.previousExits = previousExits;
-      }
-      if (yearsOfExperience) {
-        vcQuery.yearsOfExperience = yearsOfExperience;
-      }
-      if (education) {
-        vcQuery.education = education;
-      }
-      if (diversityMetrics) {
-        vcQuery.diversityMetrics = { $in: [diversityMetrics] };
-      }
+      
       if (searchQuery) {
-        vcQuery.firstName = { $regex: new RegExp(`^${searchQuery}`, 'i') };
+        query.name = { $regex: new RegExp(`^${searchQuery}`, 'i') };
       }
-      const vc = await UserModel.find({
-        isVc: true,
-        ...vcQuery,
-        userStatus: "active",
-      }).select("-password")
-        .populate("startUp");
+      const VC = await VCModel.find(query);
+      console.log(VC);
       return {
         status: 200,
-        message: "vc data retrieved",
-        data: vc,
+        message: "VC data retrieved",
+        data: VC,
       };
 
 
@@ -852,7 +840,20 @@ export const getExploreFilters = async (type) => {
           cities: founderCities,
         },
       };
-    } else {
+    }
+    else if (type === "VC") {
+      // const founderSectors = await StartUpModel.distinct("sector");
+      const founderCities = await StartUpModel.distinct("location");
+      return {
+        status: 200,
+        message: "Founder filters retrieved",
+        data: {
+          // sectors: founderSectors,
+          cities: founderCities,
+        },
+      };
+    }
+     else {
       return {
         status: 400,
         message: "Invalid 'type' parameter",
