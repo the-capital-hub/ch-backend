@@ -36,9 +36,9 @@ const VCSchema = new Schema(
     stage_focus:[{
         type:String
     }],
-    sector_focus:{
+    sector_focus:[{
         type:String
-    },
+    }],
     ticket_size:{
         type:String
     },
