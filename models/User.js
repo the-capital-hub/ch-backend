@@ -96,7 +96,7 @@ const userSchema = new Schema(
     profilePicture: {
       type: String,
       default:
-        "https://res.cloudinary.com/drjt9guif/image/upload/v1723448166/TheCapitalHub/startUps/logos/viprylq9wb7e4qx6u8dt.webp",
+        "https://res.cloudinary.com/drjt9guif/image/upload/v1728542627/TheCapitalHub/posts/images/odlyfjuaq0ptpkotzzz0.webp",
     },
 
     designation:{type: String},
