@@ -686,6 +686,8 @@ export const getExplore = async (filters) => {
 			sector_focus,
 			stage_focus,
 			ticket_size,
+			page = 1,
+			limit ,
 		} = filters;
 
 		// for startups
@@ -715,7 +717,9 @@ export const getExplore = async (filters) => {
 			if (searchQuery) {
 				query.company = { $regex: new RegExp(`^${searchQuery}`, "i") };
 			}
-			const startups = await StartUpModel.find(query).populate("founderId");
+			const startups = await StartUpModel.find(query).populate("founderId")
+			.limit(limit)
+			.skip((page - 1) * limit);
 			return {
 				status: 200,
 				message: "Startup data retrieved",
@@ -761,7 +765,9 @@ export const getExplore = async (filters) => {
 				...founderQuery,
 			})
 				.select("-password")
-				.populate("investor");
+				.populate("investor")
+				.limit(limit)
+				.skip((page - 1) * limit);
 			return {
 				status: 200,
 				message: "Investors data retrieved",
@@ -804,7 +810,9 @@ export const getExplore = async (filters) => {
 				userStatus: "active",
 			})
 				.select("-password")
-				.populate("startUp");
+				.populate("startUp")
+				.limit(limit)
+				.skip((page - 1) * limit);
 			return {
 				status: 200,
 				message: "Founder data retrieved",
@@ -827,7 +835,9 @@ export const getExplore = async (filters) => {
 			if (searchQuery) {
 				query.name = { $regex: new RegExp(`^${searchQuery}`, "i") };
 			}
-			const VC = await VCModel.find(query);
+			const VC = await VCModel.find(query)
+			.limit(limit)
+			.skip((page - 1) * limit);
 			console.log(VC);
 			return {
 				status: 200,
