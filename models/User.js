@@ -21,6 +21,7 @@ const collectionSchema = new Schema(
 );
 
 const userSchema = new Schema(
+<<<<<<< HEAD
 	{
 		firstName: {
 			type: String,
@@ -98,6 +99,85 @@ const userSchema = new Schema(
 			default:
 				"https://res.cloudinary.com/drjt9guif/image/upload/v1723448166/TheCapitalHub/startUps/logos/viprylq9wb7e4qx6u8dt.webp",
 		},
+=======
+  {
+    firstName: {
+      type: String,
+      // required: [true, "User must have a first name."],
+      // minlength: [3, "First Name must not be shorter than 3 characters"],
+      // maxlength: [10, "First Name must not be longer than 10 characters"],
+      // validate: { validator: validator.isAlpha, message: "Invalid First Name" },
+      trim: true,
+    },
+    lastName: {
+      type: String,
+      // required: [true, "User must have a last name."],
+      // minlength: [3, "Last Name must not be shorter than 3 characters"],
+      // maxlength: [10, "Last Name must not be longer than 10 characters"],
+      // validate: { validator: validator.isAlpha, message: "Invalid Last Name" },
+      trim: true,
+    },
+    linkedin:{type:String},
+    userName:{type:String},
+    phoneNumber: {
+      type: String,
+      // unique: true,
+      // required: [true, "Chief Warden must have an contact number."],
+      // validate: {
+      //   validator: (number) => number.toString().length === 13,
+      //   message: "Invalid phone number",
+      // },
+    },
+    email: {
+      type: String,
+      trim: true,
+      // unique: true,
+      lowercase: true,
+      // required: [true, "User must have an email."],
+      // validate: {
+      //   validator: function (email) {
+      //     return /[a-z0-9]+@[a-z0-9]+.com/i.test(email);
+      //   },
+      //   message: "Invalid e-Mail",
+      // },
+    },
+    password: {
+      type: String,
+      // required: [true, "User must have a password."],
+    },
+    experience: String,
+    // experience: [
+    //   {
+    //     type: String,
+    //   },
+    // ],
+    bio: {
+      type: String,
+      trim: true,
+    },
+    education: {
+      type: String,
+      trim: true,
+    },
+    location: {
+      type: String,
+      trim: true,
+      // required: [true, "User must provide location"],
+    },
+    gender: {
+      type: String,
+      // required: [true, "User must provide gender"],
+    },
+    startUp: {
+      type: Schema.Types.ObjectId,
+      ref: "StartUps",
+    },
+    profilePicture: {
+      type: String,
+      default:
+        "https://res.cloudinary.com/drjt9guif/image/upload/v1728542627/TheCapitalHub/posts/images/odlyfjuaq0ptpkotzzz0.webp",
+    },
+>>>>>>> cb305d05831ff6a4efbdbea7bc3fbd6cc5656616
 
 		designation: { type: String },
 		savedPosts: [collectionSchema],
