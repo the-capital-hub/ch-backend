@@ -13,7 +13,7 @@ export async function getAllNews(req, res) {
     try {
         const pageSize = parseInt(req.query.pageSize) || 80;
         const page = parseInt(req.query.page) || 1;
-        const q = req.query.q || 'world'; 
+        const q = req.query.q || 'business'; 
         const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(q)}&page=${page}&pageSize=${pageSize}&apiKey=${process.env.NEWS_API_KEY}`;
         
         const result = await makeApiRequest(url);
