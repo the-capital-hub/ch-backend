@@ -63,7 +63,7 @@ export async function getNewsByDate(req, res) {
         fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
         const fromDate = fiveDaysAgo.toISOString().split('T')[0]; 
         
-        const url = `https://newsapi.org/v2/everything?q=(business OR tech)&from=${fromDate}&to=${today}&apiKey=${process.env.NEWS_API_KEY}`;
+        const url = `https://newsapi.org/v2/everything?q=(business OR tech)&from=${fromDate}&to=${today}&language=en&apiKey=${process.env.NEWS_API_KEY}`;
 
         const response = await fetch(url);
         const data = await response.json();
@@ -82,7 +82,7 @@ export async function getTodaysNews(req, res) {
         twoDaysAgo.setDate(twoDaysAgo.getDate() - 1);
         const fromDate = twoDaysAgo.toISOString().split('T')[0]; 
 
-        const url = `https://newsapi.org/v2/everything?q=(business OR tech)&from=${fromDate}&to=${today}&apiKey=${process.env.NEWS_API_KEY}`;
+        const url = `https://newsapi.org/v2/everything?q=(business OR tech)&from=${fromDate}&to=${today}&language=en&apiKey=${process.env.NEWS_API_KEY}`;
 
         const response = await fetch(url);
         const data = await response.json();
