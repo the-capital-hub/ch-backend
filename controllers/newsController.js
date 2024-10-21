@@ -75,3 +75,23 @@ export async function getNewsByDate(req, res) {
     }
 }
 
+export async function getTodaysNews(req, res) {
+    try {
+        const today = new Date().toISOString().split('T')[0];
+        const twoDaysAgo = new Date();
+        twoDaysAgo.setDate(twoDaysAgo.getDate() - 1);
+        const fromDate = twoDaysAgo.toISOString().split('T')[0]; 
+
+        const url = `https://newsapi.org/v2/everything?q=(business OR tech)&from=${fromDate}&to=${today}&apiKey=${process.env.NEWS_API_KEY}`;
+
+        const response = await fetch(url);
+        const data = await response.json();
+
+        res.status(200).json(data);
+    } catch (error) {
+        console.error('Error fetching today\'s news:', error);
+        res.status(500).json({ message: 'Internal Server Error' });
+    }
+}
+
+
