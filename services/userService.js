@@ -687,7 +687,7 @@ export const getExplore = async (filters) => {
 			stage_focus,
 			ticket_size,
 			page = 1,
-			limit ,
+			limit,
 		} = filters;
 
 		// for startups
@@ -717,9 +717,10 @@ export const getExplore = async (filters) => {
 			if (searchQuery) {
 				query.company = { $regex: new RegExp(`^${searchQuery}`, "i") };
 			}
-			const startups = await StartUpModel.find(query).populate("founderId")
-			.limit(limit)
-			.skip((page - 1) * limit);
+			const startups = await StartUpModel.find(query)
+				.populate("founderId")
+				.limit(limit)
+				.skip((page - 1) * limit);
 			return {
 				status: 200,
 				message: "Startup data retrieved",
@@ -836,8 +837,8 @@ export const getExplore = async (filters) => {
 				query.name = { $regex: new RegExp(`^${searchQuery}`, "i") };
 			}
 			const VC = await VCModel.find(query)
-			.limit(limit)
-			.skip((page - 1) * limit);
+				.limit(limit)
+				.skip((page - 1) * limit);
 			console.log(VC);
 			return {
 				status: 200,
@@ -1013,6 +1014,37 @@ export const googleLogin = async (credential) => {
 		return {
 			status: 500,
 			message: "An error occurred while login using google.",
+		};
+	}
+};
+
+export const googleRegister = async (data) => {
+	try {
+		const user = await UserModel.findOne({ email: data.email });
+		if (user) {
+			return {
+				status: 202,
+				message: "User already exists.",
+			};
+		}
+		const newUser = new UserModel(data);
+		await newUser.save();
+		const token = jwt.sign(
+			{ userId: newUser._id, email: newUser.email },
+			secretKey
+		);
+		newUser.password = undefined;
+		return {
+			status: 200,
+			message: "Google Register successfull",
+			user: newUser,
+			token: token,
+		};
+	} catch (error) {
+		console.error("Error Register:", error);
+		return {
+			status: 500,
+			message: "An error occurred while registering using google.",
 		};
 	}
 };

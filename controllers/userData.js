@@ -20,6 +20,7 @@ import {
 	validateSecretKey,
 	createSecretKey,
 	googleLogin,
+	googleRegister,
 	updateEducation,
 	updateExperience,
 	deleteEducation,
@@ -979,6 +980,21 @@ export const googleLoginController = async (req, res) => {
 		res.status(500).send({
 			status: 500,
 			message: "An error occurred while login.",
+		});
+	}
+};
+
+export const googleRegisterController = async (req, res) => {
+	try {
+		const { credential } = req.body;
+		console.log("credential", credential);
+		const response = await googleRegister(credential);
+		res.status(response.status).send(response);
+	} catch (error) {
+		console.error(error);
+		res.status(500).send({
+			status: 500,
+			message: "An error occurred while registering using google.",
 		});
 	}
 };
