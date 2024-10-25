@@ -20,6 +20,7 @@ import {
 	validateSecretKeyController,
 	createSecretKeyController,
 	googleLoginController,
+	googleRegisterController,
 	updateEducationController,
 	updateExperienceController,
 	deleteEducationController,
@@ -75,6 +76,7 @@ router.patch("/resetPassword", resetPasswordController);
 router.post("/validateSecretKey", validateSecretKeyController);
 
 router.post("/googleLogin", googleLoginController);
+router.post("/googleRegister", googleRegisterController);
 
 // Authorized routes below
 router.post("/getUserByUserName", getUsersByUserNameController);
