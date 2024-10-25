@@ -1006,7 +1006,7 @@ export const googleLogin = async (credential) => {
 		return {
 			status: 200,
 			message: "Google Login successfull",
-			data: user,
+			user: user,
 			token: token,
 		};
 	} catch (error) {
