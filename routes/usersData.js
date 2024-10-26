@@ -21,6 +21,7 @@ import {
 	createSecretKeyController,
 	googleLoginController,
 	googleRegisterController,
+	linkedInLoginController,
 	updateEducationController,
 	updateExperienceController,
 	deleteEducationController,
@@ -77,6 +78,7 @@ router.post("/validateSecretKey", validateSecretKeyController);
 
 router.post("/googleLogin", googleLoginController);
 router.post("/googleRegister", googleRegisterController);
+router.post("/linkedInLogin", linkedInLoginController);
 
 // Authorized routes below
 router.post("/getUserByUserName", getUsersByUserNameController);
