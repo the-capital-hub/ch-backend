@@ -999,6 +999,76 @@ export const googleRegisterController = async (req, res) => {
 	}
 };
 
+export const linkedInLoginController = async (req, res) => {
+	try {
+		const { code } = req.body;
+
+		// Exchange code for token
+		const tokenResponse = await fetch(
+			"https://www.linkedin.com/oauth/v2/accessToken",
+			{
+				method: "POST",
+				headers: {
+					"Content-Type": "application/x-www-form-urlencoded",
+				},
+				body: new URLSearchParams({
+					grant_type: "authorization_code",
+					code,
+					redirect_uri: process.env.LINKEDIN_REDIRECT_URI,
+					client_id: process.env.LINKEDIN_CLIENT_ID,
+					client_secret: process.env.LINKEDIN_CLIENT_SECRET,
+				}),
+			}
+		);
+
+		const tokenData = await tokenResponse.json();
+
+		if (!tokenResponse.ok) {
+			throw new Error(tokenData.error || "Failed to exchange code for token");
+		}
+
+		// Fetch user profile
+		const profileResponse = await fetch(
+			"https://api.linkedin.com/v2/userinfo",
+			{
+				headers: {
+					Authorization: `Bearer ${tokenData.access_token}`,
+				},
+			}
+		);
+
+		const profileData = await profileResponse.json();
+
+		const user = await UserModel.findOne({
+			email: profileData.email,
+		});
+
+		if (!user) {
+			res.status(404).json({
+				success: false,
+				error: "User not found",
+			});
+		}
+
+		const token = jwt.sign({ userId: user._id, email: user.email }, secretKey);
+		user.password = undefined;
+
+		res.json({
+			status: 200,
+			success: true,
+			message: "LinkedIn Login successfull",
+			user: user,
+			token: token,
+		});
+	} catch (error) {
+		console.error("LinkedIn authentication error:", error);
+		res.status(400).json({
+			success: false,
+			error: error.message || "Authentication failed",
+		});
+	}
+};
+
 export const updateEducationController = async (req, res) => {
 	try {
 		const userId = req.userId;

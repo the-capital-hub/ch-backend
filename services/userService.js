@@ -997,7 +997,7 @@ export const googleLogin = async (credential) => {
 		const user = await UserModel.findOne({ email: email });
 		if (!user) {
 			return {
-				status: 404,
+				status: 202,
 				message: "User not found.",
 			};
 		}
