@@ -1000,73 +1000,104 @@ export const googleRegisterController = async (req, res) => {
 };
 
 export const linkedInLoginController = async (req, res) => {
-	try {
-		const { code } = req.body;
+    try {
+        const { code } = req.body;
+		const redirectUri = "http://localhost:3000/login"; 
+        // Exchange code for token
+        const tokenResponse = await fetch(
+            "https://www.linkedin.com/oauth/v2/accessToken",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                },
+                body: new URLSearchParams({
+                    grant_type: "authorization_code",
+                    code,
+                    redirect_uri: redirectUri,
+                    client_id: process.env.REACT_APP_LINKEDIN_CLIENT_ID,
+                    client_secret: process.env.REACT_APP_LINKEDIN_CLIENT_SECRET,
+                }),
+            }
+        );
 
-		// Exchange code for token
-		const tokenResponse = await fetch(
-			"https://www.linkedin.com/oauth/v2/accessToken",
-			{
-				method: "POST",
-				headers: {
-					"Content-Type": "application/x-www-form-urlencoded",
-				},
-				body: new URLSearchParams({
-					grant_type: "authorization_code",
-					code,
-					redirect_uri: process.env.LINKEDIN_REDIRECT_URI,
-					client_id: process.env.LINKEDIN_CLIENT_ID,
-					client_secret: process.env.LINKEDIN_CLIENT_SECRET,
-				}),
-			}
-		);
+        const tokenData = await tokenResponse.json();
+		const linkedinToken = tokenData.access_token;
+        if (!tokenResponse.ok) {
+            throw new Error(tokenData.error || "Failed to exchange code for token");
+        }
 
-		const tokenData = await tokenResponse.json();
+        // Fetch user profile
+        const profileResponse = await fetch(
+            "https://api.linkedin.com/v2/userinfo",
+            {
+                headers: {
+                    Authorization: `Bearer ${tokenData.access_token}`,
+                },
+            }
+        );
 
-		if (!tokenResponse.ok) {
-			throw new Error(tokenData.error || "Failed to exchange code for token");
-		}
+        const profileData = await profileResponse.json();
+        
 
-		// Fetch user profile
-		const profileResponse = await fetch(
-			"https://api.linkedin.com/v2/userinfo",
-			{
-				headers: {
-					Authorization: `Bearer ${tokenData.access_token}`,
-				},
-			}
-		);
+        
+		const email = profileData.email;
+		const linkedinId = profileData.sub;
 
-		const profileData = await profileResponse.json();
+        // Find or create user
+        let user = await UserModel.findOne({ email });
 
-		const user = await UserModel.findOne({
-			email: profileData.email,
-		});
+        if (!user) {
+			throw new Error("User Does Not Exist");
+        }
 
-		if (!user) {
-			res.status(404).json({
-				success: false,
-				error: "User not found",
-			});
-		}
+		// Update user with linkedinId
+        user.linkedinId = linkedinId; // Set the linkedinId
+        await user.save(); // Save the updated user record
 
-		const token = jwt.sign({ userId: user._id, email: user.email }, secretKey);
-		user.password = undefined;
+        const token = jwt.sign({ userId: user._id, email: user.email }, process.env.JWT_SECRET_KEY);
+        user.password = undefined;
 
-		res.json({
-			status: 200,
-			success: true,
-			message: "LinkedIn Login successfull",
-			user: user,
-			token: token,
-		});
-	} catch (error) {
-		console.error("LinkedIn authentication error:", error);
-		res.status(400).json({
-			success: false,
-			error: error.message || "Authentication failed",
-		});
-	}
+		
+
+
+		// const postResponse = await fetch("https://api.linkedin.com/v2/shares", {
+		// 	method: "POST",
+		// 	headers: {
+		// 		Authorization: `Bearer ${tokenData.access_token}`,
+		// 		"Content-Type": "application/json",
+		// 	},
+		// 	body: JSON.stringify({
+		// 		content: {
+		// 			contentEntities: [{
+		// 				entityLocation: "https://www.wired.com/story/tech-ceos-trump-claims-are-courting-him",
+		// 			}],
+		// 			title: "Test Post",
+		// 		},
+		// 		owner: `urn:li:person:${profileData.sub}`,
+		// 		text: {
+		// 			text: "Hello LinkedIn! This is a test post.",
+		// 		},
+		// 	}),
+		// });
+
+		// console.log(postResponse);
+
+        res.json({
+            status: 200,
+            success: true,
+            message: "LinkedIn Login successful",
+            user,
+            token,
+			linkedinToken,
+        });
+    } catch (error) {
+        console.error("LinkedIn authentication error:", error);
+        res.status(400).json({
+            success: false,
+            error: error.message || "Authentication failed",
+        });
+    }
 };
 
 export const updateEducationController = async (req, res) => {

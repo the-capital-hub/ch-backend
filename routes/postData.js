@@ -22,7 +22,8 @@ import {
   toggleCommentLikeController,
   removeCompanyUpdatePostController,
   getUserPost,
-  getPost
+  getPost,
+  sharePostLinkedinController
 } from "../controllers/postController.js";
 import { authenticateToken } from "../middlewares/authenticateToken.js";
 const router = express.Router();
@@ -40,7 +41,7 @@ router.patch("/savePost/:postId", savePostController);
 router.patch("/unsavePost", unsavePostController);
 router.get("/getSavedPostCollections/:userId", getAllSavedPostCollectionsController);
 router.post("/getSavedPostsByCollection/:userId", getSavedPostsByCollectionController);
-
+router.post("/shareOnLinkedin", sharePostLinkedinController);
 router.post("/likeUnlikePost/:postId", likeUnlikePostController);
 router.get('/likeCount/:postId', getLikeCountController);
 router.get('/likedUsers/:postId', getUsersWhoLikedPostController);
