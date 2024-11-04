@@ -943,3 +943,160 @@ export const getPostById = async (postId) => {
     }
   }
 }
+
+
+export const sharePostOnLinkedin = async (linkedInPostData, token, s3ImageUrl) => {
+  try {
+    // Check if s3ImageUrl is provided
+    if (!s3ImageUrl || s3ImageUrl === undefined) {
+      console.log("No image URL provided, sharing text only.");
+      
+      // Create the post without an image
+      const postBody = {
+        author: linkedInPostData.owner,
+        lifecycleState: "PUBLISHED",
+        specificContent: {
+          "com.linkedin.ugc.ShareContent": {
+            shareCommentary: {
+              text: linkedInPostData.text.text,
+            },
+            shareMediaCategory: "NONE", // Indicating no media
+          }
+        },
+        visibility: {
+          "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC",
+        }
+      };
+
+      // Share the post without image
+      const postResponse = await fetch("https://api.linkedin.com/v2/ugcPosts", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(postBody),
+      });
+
+      const postData = await postResponse.json();
+      if (!postResponse.ok) {
+        throw new Error(`Failed to create post: ${postResponse.status} ${postResponse.statusText} - ${JSON.stringify(postData)}`);
+      }
+      console.log("Post shared successfully:", postData);
+      return postData; // Return post data if needed
+    }
+
+    // Fetch image from S3 that needs to be uploaded
+    console.log("Fetching image from S3:", s3ImageUrl);
+    const imageResponse = await fetch(s3ImageUrl);
+    if (!imageResponse.ok) {
+      throw new Error("Failed to fetch image from S3: " + imageResponse.statusText);
+    }
+    const imageBlob = await imageResponse.blob(); // Get the image as a Blob
+
+    // Register the upload
+    const registerResponse = await fetch("https://api.linkedin.com/v2/assets?action=registerUpload", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        registerUploadRequest: {
+          owner: linkedInPostData.owner,
+          recipes: ["urn:li:digitalmediaRecipe:feedshare-image"],
+          serviceRelationships: [
+            {
+              "relationshipType": "OWNER",
+              "identifier": "urn:li:userGeneratedContent"
+            }
+          ]
+        }
+      }),
+    });
+
+    if (!registerResponse.ok) {
+      const errorDetail = await registerResponse.json();
+      throw new Error(`Failed to register upload: ${registerResponse.status} ${registerResponse.statusText} - ${JSON.stringify(errorDetail)}`);
+    }
+
+    const registerData = await registerResponse.json();
+    const uploadMechanism = registerData.value.uploadMechanism['com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest'];
+    if (!uploadMechanism) {
+      throw new Error("Upload URL not found in the registration response.");
+    }
+
+    const uploadUrl = uploadMechanism.uploadUrl; // Get the upload URL
+    const assetId = registerData.value.asset; // Get the asset ID
+
+    console.log("Upload URL:", uploadUrl);
+    console.log("Asset ID:", assetId);
+
+    // Upload the image
+    const uploadResponse = await fetch(uploadUrl, {
+      method: "PUT",
+      headers: {
+        "Content-Type": imageBlob.type,
+      },
+      body: imageBlob,
+    });
+
+    if (!uploadResponse.ok) {
+      throw new Error("Failed to upload image: " + uploadResponse.status + " " + uploadResponse.statusText);
+    }
+
+    // Create the post with the uploaded image
+    const postBody = {
+      author: linkedInPostData.owner,
+      lifecycleState: "PUBLISHED",
+      specificContent: {
+        "com.linkedin.ugc.ShareContent": {
+          shareCommentary: {
+            text: linkedInPostData.text.text,
+          },
+          shareMediaCategory: "IMAGE",
+          media: [{
+            status: "READY",
+            description: {
+              text: "Optional image description",
+            },
+            media: assetId,
+            title: {
+              text: "Optional image title",
+            }
+          }]
+        }
+      },
+      visibility: {
+        "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC",
+      }
+    };
+
+    // Share the post with the image
+    const postResponse = await fetch("https://api.linkedin.com/v2/ugcPosts", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(postBody),
+    });
+
+    const postData = await postResponse.json();
+    if (!postResponse.ok) {
+      throw new Error(`Failed to create post: ${postResponse.status} ${postResponse.statusText} - ${JSON.stringify(postData)}`);
+    }
+    console.log("Post shared successfully:", postData);
+    
+  } catch (error) {
+    console.error("Error sharing post on LinkedIn:", error);
+    return {
+      status: 500,
+      message: error.message || "An error occurred",
+    };
+  }
+};
+
+
+
+

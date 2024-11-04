@@ -38,6 +38,9 @@ const userSchema = new Schema(
 			// validate: { validator: validator.isAlpha, message: "Invalid Last Name" },
 			trim: true,
 		},
+		linkedinId : {
+			type: String
+		},
 		linkedin: { type: String },
 		userName: { type: String },
 		phoneNumber: {

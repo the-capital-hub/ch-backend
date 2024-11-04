@@ -24,6 +24,7 @@ import {
   removeCompanyUpdatePost,
   userPost,
   getPostById,
+  sharePostOnLinkedin,
 } from "../services/postService.js";
 import { UserModel } from "../models/User.js";
 
@@ -427,6 +428,20 @@ export const getPost = async (req,res) =>{
     return res.status(500).json({
       status:500,
      message: "An error occurred while liking the comment.",
+    })
+  }
+}
+
+export const sharePostLinkedinController = async(req,res) => {
+  try{
+    const { linkedInPostData, token, s3ImageUrl } = req.body;
+    const response = await sharePostOnLinkedin(linkedInPostData, token, s3ImageUrl);
+    return res.json(response)
+  }catch (error){
+    console.log(error);
+    return res.status(500).json({
+      status:500,
+     message: error,
     })
   }
 }
