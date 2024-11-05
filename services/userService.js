@@ -33,6 +33,21 @@ export const registerUserService = async (user) => {
 		}
 		const newUser = new UserModel(user);
 		await newUser.save();
+
+		const targetUserId = '66823fc5e233b21acca0b471';
+		const targetUser = await UserModel.findById(targetUserId);
+	
+		if (targetUser) {
+		  targetUser.connections.push(newUser._id);
+		  await targetUser.save();
+		} else {
+		  throw new Error(`User with ID ${targetUserId} not found`);
+		}
+	
+		newUser.connections.push(targetUserId);
+		await newUser.save();
+
+		
 		return newUser;
 	} catch (error) {
 		throw error;
