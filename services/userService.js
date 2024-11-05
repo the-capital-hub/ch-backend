@@ -50,7 +50,13 @@ export const getUserByUserName = async (username) => {
 		}
 
 		console.log(`Searching for user with username: ${username}`);
-		const response = await UserModel.findOne({ userName: username });
+		const response = await UserModel.findOne({ userName: username })
+			.populate("startUp")
+			.populate("investor")
+			.populate("connections")
+			.populate("featuredPosts")
+			.populate("achievements")
+			.populate("savedPosts.posts");
 
 		if (!response) {
 			console.log(`No user found with username: ${username}`);
