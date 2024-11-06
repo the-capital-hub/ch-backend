@@ -29,11 +29,14 @@ import {
 	getUserByIdBody,
 	unblockUser,
 	getUserEmailById,
+	getUserAnalytics,
+	getUserProfileViews,
 } from "../services/userService.js";
 
 import { sendMail } from "../utils/mailHelper.js";
 import { secretKey } from "../constants/config.js";
 import { UserModel } from "../models/User.js";
+import { UserAnalyticsModel } from "../models/UserAnalytics.js";
 import { StartUpModel } from "../models/startUp.js";
 import bcrypt from "bcrypt";
 import xlsx from "xlsx";
@@ -175,19 +178,39 @@ export const getUsersByUserNameController = async (req, res) => {
 		const { username } = req.body;
 
 		if (!username) {
-			console.log("Username not provided in the request body.");
-			return res.status(200).send({ message: "User not found" });
+			// console.log("Username not provided in the request body.");
+			return res.status(400).send({ message: "Username is required" });
 		}
 
-		console.log(`Received request to get user by username: ${username}`);
+		// console.log(`Received request to get user by username: ${username}`);
 
 		const getUser = await getUserByUserName(username);
+
+		if (getUser.status === 200) {
+			try {
+				const updatedUserAnalytics = await UserAnalyticsModel.findOneAndUpdate(
+					{ userId: getUser.message._id },
+					{ $inc: { publicProfileViews: 1 } }, // Increment publicProfileViews by 1
+					{
+						upsert: true, // Create a new document if none is found
+						new: true, // Return the updated or newly created document
+						setDefaultsOnInsert: true, // Apply default values if creating a new document
+					}
+				);
+
+				console.log("User analytics updated:", updatedUserAnalytics);
+			} catch (analyticsError) {
+				console.error("Error updating user analytics:", analyticsError);
+			}
+
+			return res.status(200).send(getUser.message);
+		}
 
 		if (getUser.status === 404) {
 			return res.status(404).send({ message: "User not found" });
 		}
 
-		return res.status(200).send(getUser.message);
+		return res.status(500).send({ message: "Unexpected error" });
 	} catch (error) {
 		console.error("Error in getUsersByUserNameController:", error);
 		return res.status(500).send({ message: "Internal server error" });
@@ -1129,6 +1152,37 @@ export const deleteExperienceController = async (req, res) => {
 		res.status(500).send({
 			status: 500,
 			message: "An error occurred while deleting experience.",
+		});
+	}
+};
+
+export const getUserAnalyticsController = async (req, res) => {
+	try {
+		const userId = req.params.userId;
+		const response = await getUserAnalytics(userId);
+		res.status(response.status).send(response);
+		return response;
+	} catch (error) {
+		console.error(error);
+		res.status(500).send({
+			status: 500,
+			message: "An error occurred while getting user analytics.",
+		});
+	}
+};
+
+export const getUserProfileViewsController = async (req, res) => {
+	try {
+		const userId = req.params.userId;
+		console.log("userId from getUserProfileViewsController: ", userId);
+		const response = await getUserProfileViews(userId);
+		res.status(response.status).send(response);
+		return response;
+	} catch (error) {
+		console.error(error);
+		res.status(500).send({
+			status: 500,
+			message: "An error occurred while getting user profile views.",
 		});
 	}
 };

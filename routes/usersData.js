@@ -38,6 +38,8 @@ import {
 	getUsersByUserNameController,
 	unblockUserController,
 	getUserEmailByIdController,
+	getUserAnalyticsController,
+	getUserProfileViewsController,
 } from "../controllers/userData.js";
 
 // import { authenticateToken } from "../middlewares/authenticateToken.js";
@@ -66,6 +68,10 @@ router.post("/send_otp", sendOTP);
 router.post("/verify_otp", verifyOtp);
 router.get("/getUserById/:id", getUserByIdController);
 router.get("/getUserEmail/:userId", getUserEmailByIdController);
+
+// User Analytics route - corrently not in use(will be used in future bcz not working properly)
+router.get("/getUserAnalytics/:userId", getUserAnalyticsController);
+router.get("/getUserProfileViews/:userId", getUserProfileViewsController);
 
 router.patch("/updateUserById/:userId", updateUserByIdController);
 
