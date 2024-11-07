@@ -38,6 +38,8 @@ import {
 	getUsersByUserNameController,
 	unblockUserController,
 	getUserEmailByIdController,
+	getUserAnalyticsController,
+	getUserProfileViewsController,
 } from "../controllers/userData.js";
 
 // import { authenticateToken } from "../middlewares/authenticateToken.js";
@@ -116,5 +118,9 @@ router.post("/getUserByIdBody", getUserByIdBodyController);
 
 //create secret key
 router.post("/createSecretKey", createSecretKeyController);
+
+// User Analytics route - corrently not in use(will be used in future bcz not working properly)
+router.get("/getUserAnalytics/:userId", getUserAnalyticsController);
+router.get("/getUserProfileViews/:userId", getUserProfileViewsController);
 
 export default router;

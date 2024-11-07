@@ -1,5 +1,9 @@
 import mongoose from "mongoose";
+const { ObjectId } = mongoose.Types;
 import { UserModel } from "../models/User.js";
+import { PostModel } from "../models/Post.js";
+import { UserAnalyticsModel } from "../models/UserAnalytics.js";
+import { ConnectionModel } from "../models/Connection.js";
 //import { comparePassword } from "../utils/passwordManager.js";
 import { StartUpModel } from "../models/startUp.js";
 import { InvestorModel } from "../models/Investor.js";
@@ -12,7 +16,7 @@ import bcrypt from "bcrypt";
 import { comparePassword, hashPassword } from "../utils/passwordManager.js";
 
 const adminMail = "learn.capitalhub@gmail.com";
-
+import connectDB from "../constants/db.js";
 export const getUsersService = async (info) => {
 	try {
 		const products = await UserModel.find({}).toArray();
@@ -34,20 +38,19 @@ export const registerUserService = async (user) => {
 		const newUser = new UserModel(user);
 		await newUser.save();
 
-		const targetUserId = '66823fc5e233b21acca0b471';
+		const targetUserId = "66823fc5e233b21acca0b471";
 		const targetUser = await UserModel.findById(targetUserId);
-	
+
 		if (targetUser) {
-		  targetUser.connections.push(newUser._id);
-		  await targetUser.save();
+			targetUser.connections.push(newUser._id);
+			await targetUser.save();
 		} else {
-		  throw new Error(`User with ID ${targetUserId} not found`);
+			throw new Error(`User with ID ${targetUserId} not found`);
 		}
-	
+
 		newUser.connections.push(targetUserId);
 		await newUser.save();
 
-		
 		return newUser;
 	} catch (error) {
 		throw error;
@@ -57,14 +60,14 @@ export const registerUserService = async (user) => {
 export const getUserByUserName = async (username) => {
 	try {
 		if (!username) {
-			console.log("No username provided.");
+			// console.log("No username provided.");
 			return {
 				status: 404,
 				message: "No user exists",
 			};
 		}
 
-		console.log(`Searching for user with username: ${username}`);
+		// console.log(`Searching for user with username: ${username}`);
 		const response = await UserModel.findOne({ userName: username })
 			.populate("startUp")
 			.populate("investor")
@@ -74,7 +77,7 @@ export const getUserByUserName = async (username) => {
 			.populate("savedPosts.posts");
 
 		if (!response) {
-			console.log(`No user found with username: ${username}`);
+			// console.log(`No user found with username: ${username}`);
 			return {
 				status: 404,
 				message: "No user exists",
@@ -1213,6 +1216,82 @@ export const deleteExperience = async (userId, experienceId) => {
 		return {
 			status: 500,
 			message: "An error occurred while deleting experience.",
+		};
+	}
+};
+
+export const getUserAnalytics = async (userId) => {
+	try {
+		const userAnalytics = await connectDB.useranalytics
+			.aggregate([
+				{
+					$match: { userId: ObjectId(userId) },
+				},
+				{
+					$lookup: {
+						from: "PostModel", // Assuming this is the name of the posts collection
+						localField: "userId", // Match the userId from the User Analytics collection
+						foreignField: "userId", // Match against the user field in the posts collection
+						as: "posts",
+					},
+				},
+				{
+					$lookup: {
+						from: "ConnectionModel", // Assuming this is the name of the users collection
+						localField: "userId", // Match the userId from the User Analytics collection
+						foreignField: "receiver", // Assuming connections are stored in an array
+						as: "connections",
+					},
+				},
+				{
+					$project: {
+						userId: 1,
+						publicProfileViews: 1,
+						detailedProfileViews: 1,
+						posts: 1,
+						connections: 1, // Include connections in the final output
+					},
+				},
+			])
+			.toArray(); // Convert the cursor to an array
+
+		return {
+			status: 200,
+			message: "User  analytics retrieved",
+			data: userAnalytics, // Return the result of the aggregation
+		};
+	} catch (error) {
+		console.error("Error getting user analytics:", error);
+		return {
+			status: 500,
+			message: "An error occurred while getting user analytics.",
+		};
+	}
+};
+
+export const getUserProfileViews = async (userId) => {
+	try {
+		const userAnalytics = await UserAnalyticsModel.findOne({
+			userId: new ObjectId(userId),
+		}); // Use new ObjectId
+
+		if (!userAnalytics) {
+			return {
+				status: 404,
+				message: "User  analytics not found",
+			};
+		}
+
+		return {
+			status: 200,
+			message: "User  profile views retrieved",
+			data: userAnalytics,
+		};
+	} catch (error) {
+		console.error("Error getting user profile views:", error.message); // Log the error message
+		return {
+			status: 500,
+			message: "An error occurred while getting user profile views.",
 		};
 	}
 };
