@@ -29,6 +29,8 @@ import {
 	getUserByIdBody,
 	unblockUser,
 	getUserEmailById,
+	getUserAnalytics,
+	getUserProfileViews,
 } from "../services/userService.js";
 
 import { sendMail } from "../utils/mailHelper.js";
@@ -39,6 +41,7 @@ import bcrypt from "bcrypt";
 import xlsx from "xlsx";
 import axios from "axios";
 import { InvestorModel } from "../models/Investor.js";
+import { UserAnalyticsModel } from "../models/UserAnalytics.js";
 import { get } from "mongoose";
 
 export const createUser = async (req, res) => {
@@ -1000,66 +1003,64 @@ export const googleRegisterController = async (req, res) => {
 };
 
 export const linkedInLoginController = async (req, res) => {
-    try {
-        const { code } = req.body;
-		const redirectUri = "https://thecapitalhub.in/login"; 
-        // Exchange code for token
-        const tokenResponse = await fetch(
-            "https://www.linkedin.com/oauth/v2/accessToken",
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded",
-                },
-                body: new URLSearchParams({
-                    grant_type: "authorization_code",
-                    code,
-                    redirect_uri: redirectUri,
-                    client_id: process.env.REACT_APP_LINKEDIN_CLIENT_ID,
-                    client_secret: process.env.REACT_APP_LINKEDIN_CLIENT_SECRET,
-                }),
-            }
-        );
+	try {
+		const { code } = req.body;
+		const redirectUri = "https://thecapitalhub.in/login";
+		// Exchange code for token
+		const tokenResponse = await fetch(
+			"https://www.linkedin.com/oauth/v2/accessToken",
+			{
+				method: "POST",
+				headers: {
+					"Content-Type": "application/x-www-form-urlencoded",
+				},
+				body: new URLSearchParams({
+					grant_type: "authorization_code",
+					code,
+					redirect_uri: redirectUri,
+					client_id: process.env.REACT_APP_LINKEDIN_CLIENT_ID,
+					client_secret: process.env.REACT_APP_LINKEDIN_CLIENT_SECRET,
+				}),
+			}
+		);
 
-        const tokenData = await tokenResponse.json();
+		const tokenData = await tokenResponse.json();
 		const linkedinToken = tokenData.access_token;
-        if (!tokenResponse.ok) {
-            throw new Error(tokenData.error || "Failed to exchange code for token");
-        }
+		if (!tokenResponse.ok) {
+			throw new Error(tokenData.error || "Failed to exchange code for token");
+		}
 
-        // Fetch user profile
-        const profileResponse = await fetch(
-            "https://api.linkedin.com/v2/userinfo",
-            {
-                headers: {
-                    Authorization: `Bearer ${tokenData.access_token}`,
-                },
-            }
-        );
+		// Fetch user profile
+		const profileResponse = await fetch(
+			"https://api.linkedin.com/v2/userinfo",
+			{
+				headers: {
+					Authorization: `Bearer ${tokenData.access_token}`,
+				},
+			}
+		);
 
-        const profileData = await profileResponse.json();
-        
+		const profileData = await profileResponse.json();
 
-        
 		const email = profileData.email;
 		const linkedinId = profileData.sub;
 
-        // Find or create user
-        let user = await UserModel.findOne({ email });
+		// Find or create user
+		let user = await UserModel.findOne({ email });
 
-        if (!user) {
+		if (!user) {
 			throw new Error("User Does Not Exist");
-        }
+		}
 
 		// Update user with linkedinId
-        user.linkedinId = linkedinId; // Set the linkedinId
-        await user.save(); // Save the updated user record
+		user.linkedinId = linkedinId; // Set the linkedinId
+		await user.save(); // Save the updated user record
 
-        const token = jwt.sign({ userId: user._id, email: user.email }, process.env.JWT_SECRET_KEY);
-        user.password = undefined;
-
-		
-
+		const token = jwt.sign(
+			{ userId: user._id, email: user.email },
+			process.env.JWT_SECRET_KEY
+		);
+		user.password = undefined;
 
 		// const postResponse = await fetch("https://api.linkedin.com/v2/shares", {
 		// 	method: "POST",
@@ -1083,21 +1084,21 @@ export const linkedInLoginController = async (req, res) => {
 
 		// console.log(postResponse);
 
-        res.json({
-            status: 200,
-            success: true,
-            message: "LinkedIn Login successful",
-            user,
-            token,
+		res.json({
+			status: 200,
+			success: true,
+			message: "LinkedIn Login successful",
+			user,
+			token,
 			linkedinToken,
-        });
-    } catch (error) {
-        console.error("LinkedIn authentication error:", error);
-        res.status(400).json({
-            success: false,
-            error: error.message || "Authentication failed",
-        });
-    }
+		});
+	} catch (error) {
+		console.error("LinkedIn authentication error:", error);
+		res.status(400).json({
+			success: false,
+			error: error.message || "Authentication failed",
+		});
+	}
 };
 
 export const updateEducationController = async (req, res) => {
@@ -1160,6 +1161,37 @@ export const deleteExperienceController = async (req, res) => {
 		res.status(500).send({
 			status: 500,
 			message: "An error occurred while deleting experience.",
+		});
+	}
+};
+
+export const getUserAnalyticsController = async (req, res) => {
+	try {
+		const userId = req.params.userId;
+		const response = await getUserAnalytics(userId);
+		res.status(response.status).send(response);
+		return response;
+	} catch (error) {
+		console.error(error);
+		res.status(500).send({
+			status: 500,
+			message: "An error occurred while getting user analytics.",
+		});
+	}
+};
+
+export const getUserProfileViewsController = async (req, res) => {
+	try {
+		const userId = req.params.userId;
+		console.log("userId from getUserProfileViewsController: ", userId);
+		const response = await getUserProfileViews(userId);
+		res.status(response.status).send(response);
+		return response;
+	} catch (error) {
+		console.error(error);
+		res.status(500).send({
+			status: 500,
+			message: "An error occurred while getting user profile views.",
 		});
 	}
 };
