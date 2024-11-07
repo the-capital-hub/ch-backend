@@ -1,6 +1,8 @@
+import path from "path";
 import { ConnectionModel } from "../models/Connection.js";
 import { UserModel } from "../models/User.js";
 import { addNotification, deleteNotification } from "./notificationService.js";
+import { populate } from "dotenv";
 
 //send connect request
 export const sendConnectionRequest = async (senderId, receiverId) => {
@@ -48,18 +50,59 @@ export const sendConnectionRequest = async (senderId, receiverId) => {
 };
 
 // get sent pending connections of a user
+// export const getSentPendingConnectionRequests = async (userId) => {
+// 	try {
+// 		const sentRequests = await ConnectionModel.find({
+// 			sender: userId,
+// 			status: "pending",
+// 		})
+// 			.populate(
+// 				"receiver",
+// 				"firstName lastName profilePicture designation startUp investor oneLinkId"
+// 			)
+// 			.sort({ _id: "-1" });
+// 		// for (const request of sentRequests) {
+// 		// 	await request.receiver.populate("startUp investor");
+// 		// }
+
+// 		if (sentRequests.length === 0) {
+// 			return {
+// 				status: 200,
+// 				message: "No pending request found",
+// 				data: [],
+// 			};
+// 		}
+// 		return {
+// 			status: 200,
+// 			message: "Sent pending connection requests retrieved successfully",
+// 			data: sentRequests,
+// 		};
+// 	} catch (error) {
+// 		console.error(error);
+// 		return {
+// 			status: 500,
+// 			message:
+// 				"An error occurred while getting sent pending connection requests.",
+// 		};
+// 	}
+// };
 export const getSentPendingConnectionRequests = async (userId) => {
 	try {
 		const sentRequests = await ConnectionModel.find({
 			sender: userId,
 			status: "pending",
-		}).populate(
-			"receiver",
-			"firstName lastName profilePicture designation startUp investor oneLinkId"
-		);
-		for (const request of sentRequests) {
-			await request.receiver.populate("startUp investor");
-		}
+		})
+			.populate({
+				path: "receiver",
+				select:
+					"firstName lastName profilePicture designation oneLinkId startUp investor",
+				populate: [
+					{ path: "startUp" }, // Populate startUp
+					{ path: "investor" }, // Populate investor
+				],
+			})
+			.sort({ _id: "-1" });
+
 		if (sentRequests.length === 0) {
 			return {
 				status: 200,
