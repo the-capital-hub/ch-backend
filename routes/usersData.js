@@ -42,7 +42,7 @@ import {
 	getUserProfileViewsController,
 } from "../controllers/userData.js";
 
-// import { authenticateToken } from "../middlewares/authenticateToken.js";
+ import { authenticateToken } from "../middlewares/authenticateToken.js";
 import { update_all } from "../controllers/postController.js";
 import multer from "multer";
 const router = express.Router();
@@ -82,9 +82,13 @@ router.post("/googleLogin", googleLoginController);
 router.post("/googleRegister", googleRegisterController);
 router.post("/linkedInLogin", linkedInLoginController);
 
+// User Analytics route - corrently not in use(will be used in future bcz not working properly)
+router.get("/getUserAnalytics/:userId", getUserAnalyticsController);
+router.get("/getUserProfileViews/:userId", getUserProfileViewsController);
+
 // Authorized routes below
 router.post("/getUserByUserName", getUsersByUserNameController);
-// router.use(authenticateToken);
+ router.use(authenticateToken);
 
 // Profile Page
 router.patch("/updateFounder", updateUser);
@@ -119,8 +123,5 @@ router.post("/getUserByIdBody", getUserByIdBodyController);
 //create secret key
 router.post("/createSecretKey", createSecretKeyController);
 
-// User Analytics route - corrently not in use(will be used in future bcz not working properly)
-router.get("/getUserAnalytics/:userId", getUserAnalyticsController);
-router.get("/getUserProfileViews/:userId", getUserProfileViewsController);
 
 export default router;
