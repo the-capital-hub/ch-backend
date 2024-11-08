@@ -23,7 +23,8 @@ import {
   removeCompanyUpdatePostController,
   getUserPost,
   getPost,
-  sharePostLinkedinController
+  sharePostLinkedinController,
+  voteForPollController
 } from "../controllers/postController.js";
 import { authenticateToken } from "../middlewares/authenticateToken.js";
 const router = express.Router();
@@ -58,4 +59,5 @@ router.get("/getCompanyUpdatePosts/:userId",getCompanyUpdateByUserController)
 router.delete("/removeFromFeaturedPost/:postId", removeFromFeaturedPostController);
 router.delete("/removeCompanyUpdatePost/:postId",removeCompanyUpdatePostController)
 
+router.patch("/vote", voteForPollController);
 export default router;

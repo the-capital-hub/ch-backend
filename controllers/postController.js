@@ -25,6 +25,7 @@ import {
   userPost,
   getPostById,
   sharePostOnLinkedin,
+  voteForPoll,
 } from "../services/postService.js";
 import { UserModel } from "../models/User.js";
 
@@ -437,6 +438,20 @@ export const sharePostLinkedinController = async(req,res) => {
     const { linkedInPostData, token, s3ImageUrl } = req.body;
     const response = await sharePostOnLinkedin(linkedInPostData, token, s3ImageUrl);
     return res.json(response)
+  }catch (error){
+    console.log(error);
+    return res.status(500).json({
+      status:500,
+     message: error,
+    })
+  }
+}
+
+export const voteForPollController = async(req,res)=>{
+  try{
+    const {postId, optionId} = req.body;
+    const response = await voteForPoll(postId, optionId, req.userId)
+    return res.json(response);
   }catch (error){
     console.log(error);
     return res.status(500).json({

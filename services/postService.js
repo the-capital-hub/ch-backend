@@ -53,6 +53,19 @@ export const createNewPost = async (data) => {
 				data.resharedPostId
 			).populate("user");
 		}
+
+		 // Handle poll options if they exist
+		 if (data.pollOptions && Array.isArray(data.pollOptions)) {
+
+			// Create poll options objects from the provided data
+			const newPollOptions = data.pollOptions.map(optionText => ({
+			  option: optionText,
+			  votes: []  
+			}));
+	  
+			data.pollOptions = newPollOptions;
+		  }
+
 		const newPost = new PostModel(data);
 		const post = await newPost.save();
 
@@ -62,6 +75,7 @@ export const createNewPost = async (data) => {
 			await user.save();
 		}
 		await newPost.populate("user");
+		await newPost.populate("pollOptions")
 		await newPost.user.populate("startUp");
 		await newPost.user.populate("investor");
 		return newPost;
@@ -71,29 +85,6 @@ export const createNewPost = async (data) => {
 	}
 };
 
-// export const allPostsData = async () => {
-//   try {
-//     const allPosts = await PostModel.find()
-//       .populate({
-//         path: "user",
-//         select: "firstName lastName designation profilePicture",
-//       })
-//       .populate({
-//         path: "resharedPostId",
-//         select: "",
-//         populate: {
-//           path: "user",
-//           select: "firstName lastName designation profilePicture",
-//         },
-//       })
-//       .sort({ _id: -1 });
-
-//     // console.log(allPosts);
-//     return allPosts;
-//   } catch (error) {
-//     throw new Error("Error fetching all posts");
-//   }
-// };
 export const allPostsData = async (page, perPage) => {
 	try {
 		const skip = (page - 1) * perPage;
@@ -198,87 +189,6 @@ export const singlePostData = async (_id) => {
 		throw new Error("Error getting post");
 	}
 };
-
-// export const savePostService = async (user, _id) => {
-//   try {
-//     const savedAlready = await UserModel.exists({
-//       _id: user,
-//       savedPosts: _id,
-//     });
-//     if (savedAlready) {
-//       return {
-//         message: "Already saved post",
-//       };
-//     }
-//     const updatedUser = await UserModel.findOneAndUpdate(
-//       { _id: user },
-//       { $push: { savedPosts: _id } },
-//       {
-//         new: true,
-//       }
-//     );
-//     return {
-//       message: "Post saved succesfully",
-//     };
-//   } catch (error) {
-//     console.error(error);
-//     throw new Error("Error saving post");
-//   }
-// };
-// export const savePostService = async (user, _id, collection) => {
-//   try {
-//     const savedAlready = await UserModel.exists({
-//       _id: user,
-//       savedPosts: _id,
-//     });
-//     if (savedAlready) {
-//       return {
-//         message: "Already saved post",
-//       };
-//     }
-//     const updatedUser = await UserModel.findOneAndUpdate(
-//       { _id: user },
-//       { $push: { savedPosts: _id } },
-//       {
-//         new: true,
-//       }
-//     );
-//     return {
-//       message: "Post saved succesfully",
-//     };
-//   } catch (error) {
-//     console.error(error);
-//     throw new Error("Error saving post");
-//   }
-// };
-
-// export const getUserSavedPosts = async (user) => {
-//   try {
-//     const { savedPosts, firstName } = await UserModel.findOne({
-//       _id: user,
-//     }).populate({
-//       path: "savedPosts",
-//       model: "Posts",
-//       populate: {
-//         path: "user",
-//         model: "Users",
-//         select: "firstName lastName profilePicture -_id",
-//       },
-//     });
-//     if (!savedPosts.length) {
-//       return {
-//         message: "No saved Posts",
-//       };
-//     }
-//     return {
-//       data: savedPosts,
-//       message: `Saved posts of ${firstName}`,
-//     };
-//   } catch (error) {
-//     console.error(error);
-//     throw new Error("Error getting saved posts");
-//   }
-// };
 
 //Like a post
 export const likeUnlikePost = async (postId, userId) => {
@@ -1124,3 +1034,61 @@ export const sharePostOnLinkedin = async (
 		};
 	}
 };
+
+
+export const voteForPoll = async(postId, optionId, userId) => {
+	try{
+
+		const post = await PostModel.findById(postId);
+
+		if(!post){
+			return {
+				status:404,
+				message:"Post Not Found"
+			}
+		}
+
+		const option = post.pollOptions.id(optionId);
+
+		if(!option){
+			return {
+				status:404,
+				message:"Option Not Found"
+			}
+		}
+		    // Check if the user has already voted for this option
+			if (option.votes.includes(userId)) {
+				console.log("Removing vote")
+				const voteIndex = option.votes.indexOf(userId);
+				  // If the user has already voted, remove the vote
+				  option.votes.splice(voteIndex, 1);
+			  }
+		  else {
+			  // Add the user to the list of voters for this option
+			  option.votes.push(userId);
+		  }
+			  // Save the post after updating the poll option
+			  await post.save();
+		  
+			  // Return a success response
+			  return {
+				status: 200,
+				message: "Vote registered successfully",
+				data: {
+				  postId: post._id,
+				  optionId: option._id,
+				  userId: userId,
+				  votesCount: option.votes.length // You can return the updated vote count
+				}
+			}		  
+
+
+	}
+	catch (error) {
+		console.error("Error voting for poll:", error);
+		return {
+			status: 500,
+			message: error.message || "An error occurred",
+		};
+	}
+}
