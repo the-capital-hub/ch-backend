@@ -1050,58 +1050,51 @@ export const sharePostOnLinkedin = async (
 
 
 export const voteForPoll = async(postId, optionId, userId) => {
-	try{
-
+	try {
 		const post = await PostModel.findById(postId);
-
-		if(!post){
+		
+		if (!post) {
 			return {
-				status:404,
-				message:"Post Not Found"
+				status: 404,
+				message: "Post Not Found"
 			}
 		}
 
 		const option = post.pollOptions.id(optionId);
-
-		if(!option){
+		
+		if (!option) {
 			return {
-				status:404,
-				message:"Option Not Found"
+				status: 404,
+				message: "Option Not Found"
 			}
 		}
-		    // Check if the user has already voted for this option
-			if (option.votes.includes(userId)) {
-				console.log("Removing vote")
-				const voteIndex = option.votes.indexOf(userId);
-				  // If the user has already voted, remove the vote
-				  option.votes.splice(voteIndex, 1);
-			  }
-		  else {
-			  // Add the user to the list of voters for this option
-			  option.votes.push(userId);
-		  }
-			  // Save the post after updating the poll option
-			  await post.save();
-		  
-			  // Return a success response
-			  return {
-				status: 200,
-				message: "Vote registered successfully",
-				data: {
-				  postId: post._id,
-				  optionId: option._id,
-				  userId: userId,
-				  votesCount: option.votes.length // You can return the updated vote count
-				}
-			}		  
 
+		// Check if user has already voted for this option
+		const hasVoted = option.votes.includes(userId);
+		
+		if (hasVoted) {
+			// Remove vote
+			option.votes = option.votes.filter(id => id !== userId);
+		} else {
+			// Add vote
+			option.votes.push(userId);
+		}
 
-	}
-	catch (error) {
+		await post.save();
+
+		// Return the entire post with updated poll options
+		const updatedPost = await PostModel.findById(postId);
+		
+		return {
+			status: 200,
+			message: hasVoted ? "Vote removed successfully" : "Vote added successfully",
+			data: updatedPost
+		}
+	} catch (error) {
 		console.error("Error voting for poll:", error);
 		return {
 			status: 500,
-			message: error.message || "An error occurred",
+			message: error.message || "An error occurred"
 		};
 	}
 }
