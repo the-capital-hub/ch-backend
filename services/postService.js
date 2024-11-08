@@ -1069,21 +1069,25 @@ export const voteForPoll = async(postId, optionId, userId) => {
 			}
 		}
 
-		// Check if user has already voted for this option
-		const hasVoted = option.votes.includes(userId);
-		
+		// Check if user has already voted
+		const voteIndex = option.votes.indexOf(userId);
+		const hasVoted = voteIndex !== -1;
+
 		if (hasVoted) {
 			// Remove vote
-			option.votes = option.votes.filter(id => id !== userId);
+			option.votes.splice(voteIndex, 1);
+			console.log("Vote removed for user:", userId);
 		} else {
 			// Add vote
 			option.votes.push(userId);
+			console.log("Vote added for user:", userId);
 		}
 
+		// Save the updated post
 		await post.save();
 
-		// Return the entire post with updated poll options
-		const updatedPost = await PostModel.findById(postId);
+		// Fetch the fresh post data
+		const updatedPost = await PostModel.findById(postId).lean();
 		
 		return {
 			status: 200,
@@ -1092,9 +1096,6 @@ export const voteForPoll = async(postId, optionId, userId) => {
 		}
 	} catch (error) {
 		console.error("Error voting for poll:", error);
-		return {
-			status: 500,
-			message: error.message || "An error occurred"
-		};
+		throw error;
 	}
 }
