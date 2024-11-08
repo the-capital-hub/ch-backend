@@ -68,6 +68,7 @@ export const createPost = async (req, res) => {
       ...req.body,
       user: req.userId,
     });
+    console.log(req.body, req.userId);
     res.send({
       message: "Post created succesfully",
       data: newPost,
