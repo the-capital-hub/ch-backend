@@ -68,13 +68,11 @@ export const createPost = async (req, res) => {
       ...req.body,
       user: req.userId,
     });
-    console.log(req.body, req.userId);
     res.send({
       message: "Post created succesfully",
       data: newPost,
     });
   } catch (err) {
-    console.log(req.body, req.userId);
     console.error("Error creating new post: ", err);
     res.status(500).send(err);
   }
@@ -453,8 +451,10 @@ export const voteForPollController = async(req,res)=>{
   try{
     const {postId, optionId} = req.body;
     const response = await voteForPoll(postId, optionId, req.userId)
+    console.log("body",req.body, "user",userId);
     return res.json(response);
   }catch (error){
+    console.log("body",req.body, "user",userId);
     console.log(error);
     return res.status(500).json({
       status:500,
