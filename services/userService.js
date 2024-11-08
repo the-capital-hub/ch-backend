@@ -60,15 +60,13 @@ export const registerUserService = async (user) => {
 export const getUserByUserName = async (username) => {
 	try {
 		if (!username) {
-			// console.log("No username provided.");
 			return {
 				status: 404,
 				message: "No user exists",
 			};
 		}
 
-		// console.log(`Searching for user with username: ${username}`);
-		const response = await UserModel.findOne({ userName: username })
+		const user = await UserModel.findOne({ userName: username })
 			.populate("startUp")
 			.populate("investor")
 			.populate("connections")
@@ -76,18 +74,39 @@ export const getUserByUserName = async (username) => {
 			.populate("achievements")
 			.populate("savedPosts.posts");
 
-		if (!response) {
-			// console.log(`No user found with username: ${username}`);
+		if (!user) {
 			return {
 				status: 404,
 				message: "No user exists",
 			};
 		}
 
-		console.log(`User found: ${response}`);
+		// Fetch or create analytics for the user
+		let userAnalytics = await UserAnalyticsModel.findOne({ userId: user._id });
+
+		if (!userAnalytics) {
+			// If no analytics exist, create a new document
+			userAnalytics = new UserAnalyticsModel({
+				userId: user._id,
+				publicProfileViews: 1, // Initialize to 1 for the first view
+				detailedProfileViews: 0,
+			});
+		} else {
+			// Increment the publicProfileViews
+			userAnalytics.publicProfileViews += 1;
+		}
+
+		// Save the user analytics
+		await userAnalytics.save();
+
+		// Log the updated publicProfileViews
+		console.log(
+			`Current publicProfileViews for user ${user._id}: ${userAnalytics.publicProfileViews}`
+		);
+
 		return {
 			status: 200,
-			message: response,
+			message: user,
 		};
 	} catch (error) {
 		console.error("An error occurred while finding the user", error);
