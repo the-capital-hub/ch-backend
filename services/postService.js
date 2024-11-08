@@ -78,10 +78,19 @@ export const createNewPost = async (data) => {
 			user.companyUpdate.push(post._id);
 			await user.save();
 		}
-		await newPost.populate("user");
-		await newPost.populate("pollOptions")
-		await newPost.user.populate("startUp");
-		await newPost.user.populate("investor");
+
+		// Populate all necessary fields
+		await newPost.populate([
+			{
+				path: "user",
+				populate: ["startUp", "investor"]
+			},
+			{
+				path: "pollOptions",
+				select: "option votes" // Explicitly select the fields we want
+			}
+		]);
+
 		return newPost;
 	} catch (error) {
 		console.error(error);
