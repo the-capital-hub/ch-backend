@@ -1076,23 +1076,19 @@ export const voteForPoll = async(postId, optionId, userId) => {
 		if (hasVoted) {
 			// Remove vote
 			option.votes.splice(voteIndex, 1);
-			console.log("Vote removed for user:", userId);
 		} else {
 			// Add vote
 			option.votes.push(userId);
-			console.log("Vote added for user:", userId);
 		}
 
 		// Save the updated post
 		await post.save();
-
-		// Fetch the fresh post data
-		const updatedPost = await PostModel.findById(postId).lean();
 		
+		// Return only the poll options array
 		return {
 			status: 200,
 			message: hasVoted ? "Vote removed successfully" : "Vote added successfully",
-			data: updatedPost
+			data: post.pollOptions.toObject() // Convert to plain object
 		}
 	} catch (error) {
 		console.error("Error voting for poll:", error);
