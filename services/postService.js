@@ -55,16 +55,20 @@ export const createNewPost = async (data) => {
 		}
 
 		 // Handle poll options if they exist
-		 if (data.pollOptions && Array.isArray(data.pollOptions)) {
+		 if (data.pollOptions) {
+			// Ensure pollOptions is an array
+			const optionsArray = Array.isArray(data.pollOptions) 
+				? data.pollOptions 
+				: Object.values(data.pollOptions);
 
 			// Create poll options objects from the provided data
-			const newPollOptions = data.pollOptions.map(optionText => ({
-			  option: optionText,
-			  votes: []  
+			const newPollOptions = optionsArray.map(optionText => ({
+				option: optionText,
+				votes: []  
 			}));
-	  
+
 			data.pollOptions = newPollOptions;
-		  }
+		 }
 
 		const newPost = new PostModel(data);
 		const post = await newPost.save();
