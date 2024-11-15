@@ -14,6 +14,10 @@ import { secretKey } from "../constants/config.js";
 import { sendMail } from "../utils/mailHelper.js";
 import bcrypt from "bcrypt";
 import { comparePassword, hashPassword } from "../utils/passwordManager.js";
+import { OAuth2Client } from "google-auth-library";
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+import { formatInTimeZone } from "date-fns-tz";
+import { addMinutes } from "date-fns";
 
 const adminMail = "learn.capitalhub@gmail.com";
 import connectDB from "../constants/db.js";
@@ -72,7 +76,9 @@ export const getUserByUserName = async (username) => {
 			.populate("connections")
 			.populate("featuredPosts")
 			.populate("achievements")
-			.populate("savedPosts.posts");
+			.populate("savedPosts.posts")
+			.populate("eventId")
+			.populate("Availability");
 
 		if (!user) {
 			return {
@@ -1034,29 +1040,96 @@ export const createSecretKey = async (userId, secretOneLinkKey) => {
 	}
 };
 
-export const googleLogin = async (credential) => {
+// export const googleLogin = async (credential) => {
+// 	try {
+// 		const { email } = jwt.decode(credential);
+// 		const user = await UserModel.findOne({ email: email });
+// 		if (!user) {
+// 			return {
+// 				status: 202,
+// 				message: "User not found.",
+// 			};
+// 		}
+// 		const token = jwt.sign({ userId: user._id, email: user.email }, secretKey);
+// 		user.password = undefined;
+// 		return {
+// 			status: 200,
+// 			message: "Google Login successfull",
+// 			user: user,
+// 			token: token,
+// 		};
+// 	} catch (error) {
+// 		console.error("Error login:", error);
+// 		return {
+// 			status: 500,
+// 			message: "An error occurred while login using google.",
+// 		};
+// 	}
+// };
+
+export const googleLogin = async ({
+	access_token,
+	refresh_token,
+	id_token,
+}) => {
 	try {
-		const { email } = jwt.decode(credential);
-		const user = await UserModel.findOne({ email: email });
+		// Verify id_token and get user info from Google
+		const ticket = await client.verifyIdToken({
+			idToken: id_token,
+			audience: process.env.GOOGLE_CLIENT_ID,
+		});
+		const payload = ticket.getPayload();
+		const { email } = payload;
+
+		// Find user by email
+		let user = await UserModel.findOne({ email });
+
 		if (!user) {
 			return {
 				status: 202,
 				message: "User not found.",
 			};
 		}
+
+		// Get the current time in the specified time zone
+		const currentTime = new Date();
+		const expireTime = addMinutes(currentTime, 50); // Add 50 minutes to current time
+
+		// Format the expiration time in the desired time zone (Asia/Kolkata)
+		const formattedExpireTime = formatInTimeZone(
+			expireTime,
+			"Asia/Kolkata",
+			"yyyy-MM-dd'T'HH:mm:ss" // Format without offset
+		);
+
+		// Update user's meeting tokens
+		user.meetingToken = {
+			access_token,
+			refresh_token,
+			id_token,
+			expire_in: formattedExpireTime,
+		};
+		await user.save();
+
+		// Create JWT token
 		const token = jwt.sign({ userId: user._id, email: user.email }, secretKey);
-		user.password = undefined;
+
+		// Remove password from response
+		user = user.toObject();
+		delete user.password;
+
 		return {
 			status: 200,
-			message: "Google Login successfull",
-			user: user,
-			token: token,
+			message: "Google Login successful",
+			user,
+			token,
 		};
 	} catch (error) {
 		console.error("Error login:", error);
 		return {
 			status: 500,
 			message: "An error occurred while login using google.",
+			error: error.message,
 		};
 	}
 };
@@ -1311,6 +1384,39 @@ export const getUserProfileViews = async (userId) => {
 		return {
 			status: 500,
 			message: "An error occurred while getting user profile views.",
+		};
+	}
+};
+
+export const saveMeetingToken = async (userId, token) => {
+	try {
+		const user = await UserModel.findById(userId);
+		if (!user) {
+			return {
+				status: 404,
+				message: "User  not found",
+			};
+		}
+
+		console.log("token", token);
+		// Save the access token and other relevant fields
+		// user.meetingToken = {
+		// 	access_token: token.access_token,
+		// 	token_type: token.token_type,
+		// 	expires_in: token.expires_in,
+		// 	scope: token.scope,
+		// };
+
+		// await user.save();
+		return {
+			status: 200,
+			message: "Meeting token saved",
+		};
+	} catch (error) {
+		console.error("Error saving meeting token:", error);
+		return {
+			status: 500,
+			message: "An error occurred while saving meeting token.",
 		};
 	}
 };

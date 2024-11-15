@@ -38,8 +38,8 @@ const userSchema = new Schema(
 			// validate: { validator: validator.isAlpha, message: "Invalid Last Name" },
 			trim: true,
 		},
-		linkedinId : {
-			type: String
+		linkedinId: {
+			type: String,
 		},
 		linkedin: { type: String },
 		userName: { type: String },
@@ -307,6 +307,16 @@ const userSchema = new Schema(
 				type: String,
 			},
 		],
+		eventId: [
+			{
+				type: Schema.Types.ObjectId,
+				ref: "Events",
+			},
+		],
+		Availability: {
+			type: Schema.Types.Boolean,
+			ref: "Availability",
+		},
 	},
 	{
 		timestamps: true,
