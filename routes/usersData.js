@@ -40,9 +40,10 @@ import {
 	getUserEmailByIdController,
 	getUserAnalyticsController,
 	getUserProfileViewsController,
+	saveMeetingTokenController,
 } from "../controllers/userData.js";
 
- import { authenticateToken } from "../middlewares/authenticateToken.js";
+import { authenticateToken } from "../middlewares/authenticateToken.js";
 import { update_all } from "../controllers/postController.js";
 import multer from "multer";
 const router = express.Router();
@@ -86,9 +87,9 @@ router.post("/linkedInLogin", linkedInLoginController);
 router.get("/getUserAnalytics/:userId", getUserAnalyticsController);
 router.get("/getUserProfileViews/:userId", getUserProfileViewsController);
 
-// Authorized routes below
 router.post("/getUserByUserName", getUsersByUserNameController);
- router.use(authenticateToken);
+// Authorized routes below
+router.use(authenticateToken);
 
 // Profile Page
 router.patch("/updateFounder", updateUser);
@@ -123,5 +124,6 @@ router.post("/getUserByIdBody", getUserByIdBodyController);
 //create secret key
 router.post("/createSecretKey", createSecretKeyController);
 
+router.post("/saveMeetingToken", saveMeetingTokenController);
 
 export default router;

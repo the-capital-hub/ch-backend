@@ -31,6 +31,7 @@ import {
 	getUserEmailById,
 	getUserAnalytics,
 	getUserProfileViews,
+	saveMeetingToken,
 } from "../services/userService.js";
 
 import { sendMail } from "../utils/mailHelper.js";
@@ -973,16 +974,50 @@ export const createSecretKeyController = async (req, res) => {
 	}
 };
 
+// export const googleLoginController = async (req, res) => {
+// 	try {
+// 		const { credential } = req.body;
+// 		const response = await googleLogin(credential);
+// 		res.status(response.status).send(response);
+// 	} catch (error) {
+// 		console.error(error);
+// 		res.status(500).send({
+// 			status: 500,
+// 			message: "An error occurred while login.",
+// 		});
+// 	}
+// };
 export const googleLoginController = async (req, res) => {
 	try {
+		console.log("Body", req.body);
 		const { credential } = req.body;
-		const response = await googleLogin(credential);
+		const access_token = credential.access_token;
+		const refresh_token = credential.refresh_token;
+		const id_token = credential.id_token;
+		// console.log("access_token", access_token);
+		// console.log("refresh_token", refresh_token);
+		// console.log("id_token", id_token);
+
+		if (!access_token || !refresh_token || !id_token) {
+			return res.status(400).send({
+				status: 400,
+				message: "Missing required tokens",
+			});
+		}
+
+		const response = await googleLogin({
+			access_token,
+			refresh_token,
+			id_token,
+		});
+
 		res.status(response.status).send(response);
 	} catch (error) {
 		console.error(error);
 		res.status(500).send({
 			status: 500,
 			message: "An error occurred while login.",
+			error: error.message,
 		});
 	}
 };
@@ -1192,6 +1227,22 @@ export const getUserProfileViewsController = async (req, res) => {
 		res.status(500).send({
 			status: 500,
 			message: "An error occurred while getting user profile views.",
+		});
+	}
+};
+
+export const saveMeetingTokenController = async (req, res) => {
+	try {
+		const userId = req.userId;
+		// const { token } = req.body;
+		const response = await saveMeetingToken(userId, req.body);
+		res.status(response.status).send(response);
+		return response;
+	} catch (error) {
+		console.error(error);
+		res.status(500).send({
+			status: 500,
+			message: "An error occurred while saving meeting token.",
 		});
 	}
 };
