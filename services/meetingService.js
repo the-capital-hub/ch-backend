@@ -75,6 +75,8 @@ export const createEvent = async (userId, data) => {
 			description: data.description,
 			duration: data.duration,
 			isPrivate: data.isPrivate,
+			price: data.price,
+			discount: data.discount,
 		});
 
 		await UserModel.findByIdAndUpdate(user._id, {

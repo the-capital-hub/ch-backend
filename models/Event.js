@@ -28,6 +28,14 @@ const eventSchema = new mongoose.Schema(
 				ref: "Bookings",
 			},
 		],
+		price: {
+			type: Number,
+			default: 0,
+		},
+		discount: {
+			type: Number,
+			default: 0,
+		},
 	},
 	{
 		timestamps: true,
