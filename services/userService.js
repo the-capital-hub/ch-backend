@@ -1076,7 +1076,7 @@ export const googleLogin = async ({
 		// Verify id_token and get user info from Google
 		const ticket = await client.verifyIdToken({
 			idToken: id_token,
-			audience: process.env.GOOGLE_CLIENT_ID,
+			audience: process.env.REACT_APP_GOOGLE_CLIENT_ID,
 		});
 		const payload = ticket.getPayload();
 		const { email } = payload;
