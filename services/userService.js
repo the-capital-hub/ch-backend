@@ -87,6 +87,13 @@ export const getUserByUserName = async (username) => {
 			};
 		}
 
+		const post = await PostModel.find({ user: user._id });
+		// .populate("user")
+		// .populate("comments")
+		// .populate("resharedPostId")
+		// .populate("resharedPostId.user")
+		// .populate("likes");
+
 		// Fetch or create analytics for the user
 		let userAnalytics = await UserAnalyticsModel.findOne({ userId: user._id });
 
@@ -106,13 +113,13 @@ export const getUserByUserName = async (username) => {
 		await userAnalytics.save();
 
 		// Log the updated publicProfileViews
-		console.log(
-			`Current publicProfileViews for user ${user._id}: ${userAnalytics.publicProfileViews}`
-		);
+		// console.log(
+		// 	`Current publicProfileViews for user ${user._id}: ${userAnalytics.publicProfileViews}`
+		// );
 
 		return {
 			status: 200,
-			message: user,
+			message: { user, post },
 		};
 	} catch (error) {
 		console.error("An error occurred while finding the user", error);
