@@ -183,7 +183,7 @@ export const getUsersByUserNameController = async (req, res) => {
 			return res.status(200).send({ message: "User not found" });
 		}
 
-		console.log(`Received request to get user by username: ${username}`);
+		// console.log(`Received request to get user by username: ${username}`);
 
 		const getUser = await getUserByUserName(username);
 
