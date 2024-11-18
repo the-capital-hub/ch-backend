@@ -54,21 +54,21 @@ export const createNewPost = async (data) => {
 			).populate("user");
 		}
 
-		 // Handle poll options if they exist
-		 if (data.pollOptions) {
+		// Handle poll options if they exist
+		if (data.pollOptions) {
 			// Ensure pollOptions is an array
-			const optionsArray = Array.isArray(data.pollOptions) 
-				? data.pollOptions 
+			const optionsArray = Array.isArray(data.pollOptions)
+				? data.pollOptions
 				: Object.values(data.pollOptions);
 
 			// Create poll options objects from the provided data
-			const newPollOptions = optionsArray.map(optionText => ({
+			const newPollOptions = optionsArray.map((optionText) => ({
 				option: optionText,
-				votes: []  
+				votes: [],
 			}));
 
 			data.pollOptions = newPollOptions;
-		 }
+		}
 
 		const newPost = new PostModel(data);
 		const post = await newPost.save();
@@ -83,12 +83,12 @@ export const createNewPost = async (data) => {
 		await newPost.populate([
 			{
 				path: "user",
-				populate: ["startUp", "investor"]
+				populate: ["startUp", "investor"],
 			},
 			{
 				path: "pollOptions",
-				select: "option votes" // Explicitly select the fields we want
-			}
+				select: "option votes", // Explicitly select the fields we want
+			},
 		]);
 
 		return newPost;
@@ -195,7 +195,31 @@ export const singlePostData = async (_id) => {
 						],
 					},
 				],
+			})
+			.populate({
+				path: "likes",
+				select: "firstName lastName profilePicture", // Adjust fields as needed
+			})
+			.populate({
+				path: "comments.user", // Populate user field in comments
+				select:
+					"firstName lastName designation profilePicture investor startUp oneLinkId",
+				populate: [
+					{
+						path: "investor",
+						select: "companyName",
+					},
+					{
+						path: "startUp",
+						select: "company",
+					},
+				],
+			})
+			.populate({
+				path: "pollOptions.votes", // Populate votes in pollOptions
+				select: "firstName lastName profilePicture", // Adjust fields as needed
 			});
+
 		return post;
 	} catch (error) {
 		console.error(error);
@@ -1048,25 +1072,24 @@ export const sharePostOnLinkedin = async (
 	}
 };
 
-
-export const voteForPoll = async(postId, optionId, userId) => {
+export const voteForPoll = async (postId, optionId, userId) => {
 	try {
 		const post = await PostModel.findById(postId);
-		
+
 		if (!post) {
 			return {
 				status: 404,
-				message: "Post Not Found"
-			}
+				message: "Post Not Found",
+			};
 		}
 
 		const option = post.pollOptions.id(optionId);
-		
+
 		if (!option) {
 			return {
 				status: 404,
-				message: "Option Not Found"
-			}
+				message: "Option Not Found",
+			};
 		}
 
 		// Check if user has already voted
@@ -1083,15 +1106,17 @@ export const voteForPoll = async(postId, optionId, userId) => {
 
 		// Save the updated post
 		await post.save();
-		
+
 		// Return only the poll options array
 		return {
 			status: 200,
-			message: hasVoted ? "Vote removed successfully" : "Vote added successfully",
-			data: post.pollOptions.toObject() // Convert to plain object
-		}
+			message: hasVoted
+				? "Vote removed successfully"
+				: "Vote added successfully",
+			data: post.pollOptions.toObject(), // Convert to plain object
+		};
 	} catch (error) {
 		console.error("Error voting for poll:", error);
 		throw error;
 	}
-}
+};
