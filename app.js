@@ -28,6 +28,7 @@ import subscriptionRoutes from "./routes/subscriptionRoutes.js";
 import vcRoutes from "./routes/vcRoute.js";
 import newsRouter from "./routes/newsRoutes.js";
 import meetingsRoutes from "./routes/meetingsRoutes.js";
+import ResourceRouter from "./routes/resourceRoute.js";
 
 const allowedOrigins = [
 	"http://localhost:3000",
@@ -62,6 +63,7 @@ app.use("/subscription", subscriptionRoutes);
 app.use("/vc", vcRoutes);
 app.use("/news", newsRouter);
 app.use("/meetings", meetingsRoutes);
+app.use("/resources", ResourceRouter);
 // documentation upload
 
 const storage = multer.diskStorage({
