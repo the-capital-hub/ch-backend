@@ -240,13 +240,48 @@ export const getSchedulePageData = async (username, eventId) => {
 	}
 };
 
+function convertToDateObject(dateString) {
+	// Get current year
+	const currentYear = new Date().getFullYear();
+
+	// Parse the month and day
+	const [month, day] = dateString.split(" ");
+
+	// Create a mapping of month names to month indices
+	const monthMap = {
+		January: 0,
+		February: 1,
+		March: 2,
+		April: 3,
+		May: 4,
+		June: 5,
+		July: 6,
+		August: 7,
+		September: 8,
+		October: 9,
+		November: 10,
+		December: 11,
+	};
+
+	// Convert month name to month index
+	const monthIndex = monthMap[month];
+
+	// Create and return the date object
+	return new Date(currentYear, monthIndex, parseInt(day));
+}
+
 // Unauthenticated route for scheduling meetings
 export const scheduleMeeting = async (data) => {
 	try {
+		// console.log("data with Payment status", data);
 		// Fetch the event data from the database
-		const eventData = await EventModel.find({ _id: data.eventId });
+		const eventData = await EventModel.find({ _id: data.meetingData.eventId });
 		// Fetch the user data from the database
-		const user = await UserModel.findOne({ userName: data.username });
+		const user = await UserModel.findOne({
+			userName: data.meetingData.username,
+		});
+
+		// console.log("user", user);
 
 		// Get the current time
 		const currentTime = new Date();
@@ -255,6 +290,7 @@ export const scheduleMeeting = async (data) => {
 		let refreshToken = user.meetingToken?.refresh_token;
 		let expireIn = user.meetingToken?.expire_in;
 
+		// console.log("Meeting Token", accessToken, refreshToken, expireIn);
 		// If the access token is expired, use the refresh token to get a new access token
 		if (expireIn && isAfter(currentTime, new Date(expireIn))) {
 			const oAuth2Client = new google.auth.OAuth2(
@@ -292,9 +328,24 @@ export const scheduleMeeting = async (data) => {
 			return `${dateString} ${currentYear} ${timeString}`;
 		};
 
+		// Log the inputs
+		// console.log("Date String:", data.meetingData.date);
+		// console.log("Start Time String:", data.meetingData.startTime);
+		// console.log("End Time String:", data.meetingData.endTime);
+
 		// Create full date strings for the start and end times
-		const startDateFull = createFullDateString(data.date, data.startTime);
-		const endDateFull = createFullDateString(data.date, data.endTime);
+		const startDateFull = createFullDateString(
+			data.meetingData.date,
+			data.meetingData.startTime
+		);
+		const endDateFull = createFullDateString(
+			data.meetingData.date,
+			data.meetingData.endTime
+		);
+
+		// Log the full date strings
+		// console.log("Start Date Full String:", startDateFull);
+		// console.log("End Date Full String:", endDateFull);
 
 		// Parse the start and end date/time strings
 		const parsedStartDate = parse(
@@ -303,6 +354,11 @@ export const scheduleMeeting = async (data) => {
 			new Date()
 		);
 		const parsedEndDate = parse(endDateFull, "MMMM dd yyyy HH:mm", new Date());
+
+		// Check if parsed dates are valid
+		if (isNaN(parsedStartDate.getTime()) || isNaN(parsedEndDate.getTime())) {
+			throw new Error("Parsed date is invalid.");
+		}
 
 		// Format the start and end dates in the desired time zone
 		const startDate = formatInTimeZone(
@@ -318,7 +374,7 @@ export const scheduleMeeting = async (data) => {
 
 		// Create the event object for the Google Calendar API
 		const event = {
-			summary: eventData[0].title,
+			summary: eventData[0]?.title,
 			description: data.additionalInfo,
 			start: {
 				dateTime: startDate,
@@ -342,6 +398,9 @@ export const scheduleMeeting = async (data) => {
 			auth: oAuth2Client,
 		});
 
+		// console.log("Access Token:", accessToken);
+		// console.log("Refresh Token:", refreshToken);
+
 		// Insert the event into the user's primary calendar
 		const response = await calendar.events.insert({
 			calendarId: "primary",
@@ -355,21 +414,28 @@ export const scheduleMeeting = async (data) => {
 			console.error("Hangout link not found in response.");
 		}
 
+		console.log("startDate:", startDate);
+		console.log("endDate:", endDate);
+
 		// Create a new meeting booking in the database
 		const meeting = await BookingModel.create({
 			userId: user._id,
-			name: data.name,
-			email: data.email,
-			eventId: data.eventId,
-			start: startDate,
-			end: endDate,
-			additionalInfo: data.additionalInfo,
+			name: data.meetingData.name,
+			email: data.meetingData.email,
+			eventId: data.meetingData.eventId,
+			startTime: startDate,
+			endTime: endDate,
+			additionalInfo: data.meetingData.additionalInfo,
 			meetingLink: hangoutLink,
 			googleEventId: response.data.id,
-			title: eventData[0].title,
-			date: data.date,
-			// transactionId: data.transactionId,
+			title: eventData[0]?.title,
+			date: data.meetingData.date,
+			paymentStatus: data.meetingData.paymentStatus || "Not Required",
+			paymentId: data.meetingData.paymentId || null,
+			paymentAmount: data.meetingData.paymentAmount || 0,
 		});
+
+		console.log("Meeting created:", meeting);
 
 		// Update the event model to include the new meeting ID in the bookings array
 		await EventModel.findByIdAndUpdate(data.eventId, {
@@ -475,7 +541,7 @@ export const verifyPayment = async (req, res) => {
 			status: 200,
 			data: {
 				orderId,
-				paymentId: payment.payment_id,
+				paymentId: payment.cf_payment_id,
 				amount: payment.payment_amount,
 				currency: payment.payment_currency,
 				status: paymentStatus,
