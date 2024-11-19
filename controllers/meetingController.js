@@ -8,6 +8,8 @@ import {
 	cancelSheduledMeeting,
 	getAllSheduledMeeting,
 	getEventsByUsername,
+	createPaymentSession,
+	verifyPayment,
 } from "../services/meetingService.js";
 
 export const updateAvaibilityController = async (req, res) => {
@@ -92,6 +94,33 @@ export const scheduleMeetingController = async (req, res) => {
 		res.status(500).send({
 			status: 500,
 			message: "An error occurred while updating availability.",
+		});
+	}
+};
+
+export const createPaymentSessionController = async (req, res) => {
+	try {
+		// console.log(req.body);
+		const response = await createPaymentSession(req.body);
+		res.status(response.status).send(response);
+	} catch (error) {
+		console.error(error);
+		res.status(500).send({
+			status: 500,
+			message: "An error occurred while intiating payment.",
+		});
+	}
+};
+
+export const paymentVerifyController = async (req, res) => {
+	try {
+		const response = await verifyPayment(req, res);
+		res.status(response.status).send(response);
+	} catch (error) {
+		console.error(error);
+		res.status(500).send({
+			status: 500,
+			message: "An error occurred while verifying payment.",
 		});
 	}
 };

@@ -5,6 +5,13 @@ import { BookingModel } from "../models/Bookings.js";
 import { formatInTimeZone } from "date-fns-tz";
 import { parse, isAfter, addMinutes } from "date-fns";
 import { google } from "googleapis";
+import crypto from "crypto";
+import { Cashfree } from "cashfree-pg";
+import { v4 as uuidv4 } from "uuid";
+
+Cashfree.XClientId = process.env.CASHFREE_CLIENT_ID;
+Cashfree.XClientSecret = process.env.CASHFREE_SECRET_KEY;
+Cashfree.XEnvironment = Cashfree.Environment.SANDBOX; // chnage to production after deployment
 
 const { OAuth2 } = google.auth;
 const oAuth2Client = new OAuth2(
@@ -361,6 +368,7 @@ export const scheduleMeeting = async (data) => {
 			googleEventId: response.data.id,
 			title: eventData[0].title,
 			date: data.date,
+			// transactionId: data.transactionId,
 		});
 
 		// Update the event model to include the new meeting ID in the bookings array
@@ -384,185 +392,118 @@ export const scheduleMeeting = async (data) => {
 	}
 };
 
-// export const scheduleMeeting = async (data) => {
-// 	try {
-// 		const eventData = await EventModel.find({ _id: data.eventId });
-// 		const user = await UserModel.findOne({ userName: data.username });
-// 		// if (!user) {
-// 		// 	return {
-// 		// 		status: 404,
-// 		// 		message: "User  not found",
-// 		// 	};
-// 		// }
-// 		// Check if user has meeting token and if it is expired or not
-// 		const currentTime = new Date();
-// 		let accessToken = user.meetingToken?.access_token;
-// 		let refreshToken = user.meetingToken?.refresh_token;
-// 		let expireIn = user.meetingToken?.expire_in;
+// Payment initiation before scheduling a meeting
+async function generateOrderId() {
+	try {
+		const uniqueId = crypto.randomBytes(16).toString("hex");
+		const hash = crypto.createHash("sha256");
+		hash.update(uniqueId);
+		return hash.digest("hex").substr(0, 12);
+	} catch (error) {
+		console.error("Error generating order ID:", error);
+		throw new Error("Failed to generate order ID");
+	}
+}
+export const createPaymentSession = async (data) => {
+	try {
+		// Generate order ID
+		const orderId = await generateOrderId();
+		// Generate a random customer ID
+		const customerId = uuidv4();
 
-// 		if (expireIn && isAfter(currentTime, new Date(expireIn))) {
-// 			// Token is expired, use refresh token to get a new access token
-// 			const oAuth2Client = new google.auth.OAuth2(
-// 				process.env.GOOGLE_CLIENT_ID,
-// 				process.env.GOOGLE_CLIENT_SECRET,
-// 				process.env.GOOGLE_REDIRECT_URI
-// 			);
+		// Prepare request payload
+		const request = {
+			order_amount: parseFloat(data.paymentAmount).toFixed(2),
+			order_currency: "INR",
+			order_id: orderId,
+			customer_details: {
+				customer_id: customerId,
+				customer_name: data.name.trim(),
+				customer_email: data.email.toLowerCase().trim(),
+				customer_phone: "+919650515013",
+			},
+			order_expiry_time: new Date(Date.now() + 30 * 60 * 1000).toISOString(), // 30 minutes expiry
+		};
 
-// 			oAuth2Client.setCredentials({ refresh_token: refreshToken });
+		// Create order with Cashfree
+		const response = await Cashfree.PGCreateOrder("2023-08-01", request);
 
-// 			const { credentials } = await oAuth2Client.refreshAccessToken();
-// 			accessToken = credentials.access_token;
+		// Validate response
+		if (!response?.data?.payment_session_id) {
+			throw new Error("Invalid response from payment gateway");
+		}
 
-// 			// Get the current time in the specified time zone
-// 			const currentTime = new Date();
-// 			const expireTime = addMinutes(currentTime, 50); // Add 50 minutes to current time
+		return {
+			status: 200,
+			data: response.data,
+		};
+	} catch (error) {
+		console.error("Payment error:", error);
+		return {
+			status: 500,
+			data: {
+				orderId: null,
+				paymentSessionId: null,
+				paymentLink: null,
+				orderStatus: null,
+				expiryTime: null,
+			},
+			error: error.message,
+		};
+	}
+};
 
-// 			// Format the expiration time in the desired time zone (Asia/Kolkata)
-// 			const formattedExpireTime = formatInTimeZone(
-// 				expireTime,
-// 				"Asia/Kolkata",
-// 				"yyyy-MM-dd'T'HH:mm:ss" // Format without offset
-// 			);
+export const verifyPayment = async (req, res) => {
+	try {
+		const { orderId } = req.body;
+		// Fetch payment details
+		const response = await Cashfree.PGOrderFetchPayments("2023-08-01", orderId);
 
-// 			// Update the user's meeting token with the new access token and reset the expiration time
-// 			user.meetingToken.access_token = accessToken;
-// 			user.meetingToken.expire_in = formattedExpireTime;
-// 			await user.save();
-// 		}
-// 		//  else if (!accessToken) {
-// 		// 	return {
-// 		// 		status: 401,
-// 		// 		message: "No valid access token available.",
-// 		// 	};
-// 		// }
+		// Validate response
+		if (!response?.data) {
+			throw new Error("Invalid response from payment gateway");
+		}
 
-// 		// Set the credentials for the OAuth2 client
-// 		oAuth2Client.setCredentials({ access_token: accessToken });
-// 		console.log("Data from meeting service:", data);
+		// Extract payment status
+		const payment = response.data[0] || {};
+		const paymentStatus = payment.payment_status?.toLowerCase();
 
-// 		const currentYear = new Date().getFullYear();
+		// Define valid payment statuses
+		const validPaymentStatuses = ["success", "completed", "settled"];
 
-// 		// Create a full date string
-// 		const createFullDateString = (dateString, timeString) => {
-// 			return `${dateString} ${currentYear} ${timeString}`;
-// 		};
-
-// 		// Parse the date
-// 		const startDateFull = createFullDateString(data.date, data.startTime);
-// 		const endDateFull = createFullDateString(data.date, data.endTime);
-
-// 		// Use the correct format for parsing
-// 		const parsedStartDate = parse(
-// 			startDateFull,
-// 			"MMMM dd yyyy HH:mm",
-// 			new Date()
-// 		);
-// 		const parsedEndDate = parse(endDateFull, "MMMM dd yyyy HH:mm", new Date());
-
-// 		const startDate = formatInTimeZone(
-// 			parsedStartDate,
-// 			"Asia/Kolkata",
-// 			"yyyy-MM-dd'T'HH:mm:ss" // No offset
-// 		);
-// 		const endDate = formatInTimeZone(
-// 			parsedEndDate,
-// 			"Asia/Kolkata",
-// 			"yyyy-MM-dd'T'HH:mm:ss" // No offset
-// 		);
-
-// 		console.log("Start Date:", startDate);
-// 		console.log("End Date:", endDate);
-
-// 		const event = {
-// 			summary: eventData[0].title,
-// 			description: data.additionalInfo,
-// 			start: {
-// 				dateTime: startDate,
-// 				timeZone: "Asia/Kolkata",
-// 			},
-// 			end: {
-// 				dateTime: endDate,
-// 				timeZone: "Asia/Kolkata",
-// 			},
-// 			conferenceData: {
-// 				createRequest: {
-// 					requestId: Math.random().toString(36).substring(2, 12),
-// 					conferenceSolutionKey: { type: "hangoutsMeet" },
-// 				},
-// 			},
-// 		};
-
-// 		const calendar = google.calendar({
-// 			version: "v3",
-// 			auth: oAuth2Client,
-// 		});
-
-// 		const response = await calendar.events.insert({
-// 			calendarId: "primary",
-// 			requestBody: event,
-// 			conferenceDataVersion: 1,
-// 		});
-
-// 		// if (response.status === 401) {
-// 		// 	return {
-// 		// 		status: 401,
-// 		// 		message: " Unathrized!, Please syn with Google",
-// 		// 	};
-// 		// }
-// 		// console.log("status", response.status); // Log the response data for debugging
-// 		// console.log("eventData", eventData);
-// 		// console.log("title", eventData[0].title);
-
-// 		// Check if hangoutLink exists in the response
-// 		const hangoutLink = response.data.hangoutLink;
-// 		// console.log("hangoutLink", hangoutLink);
-// 		if (!hangoutLink) {
-// 			console.error("Hangout link not found in response.");
-// 			// Handle the case where the hangout link is not available
-// 			// You might want to throw an error or set a default value
-// 		}
-
-// 		const meeting = await BookingModel.create({
-// 			userId: user._id,
-// 			name: data.name,
-// 			email: data.email,
-// 			eventId: data.eventId,
-// 			start: startDate,
-// 			end: endDate,
-// 			additionalInfo: data.additionalInfo,
-// 			meetingLink: hangoutLink,
-// 			googleEventId: response.data.id,
-// 			title: eventData[0].title,
-// 			date: data.date,
-// 		});
-
-// 		// Update the EventModel to include the new meeting._id in the bookings array
-// 		await EventModel.findByIdAndUpdate(data.eventId, {
-// 			$push: { bookings: meeting._id }, // Push the new meeting ID into the bookings array
-// 		});
-
-// 		console.log("meeting", meeting);
-
-// 		return {
-// 			status: 200,
-// 			message: "Meeting scheduled successfully",
-// 			data: meeting,
-// 		};
-// 	} catch (error) {
-// 		console.error("Error scheduling meeting:", error);
-// 		// Check if the error is a GaxiosError and if it has a response with status 401
-// 		// if (error.response && error.response.status === 401) {
-// 		// 	return {
-// 		// 		status: 401,
-// 		// 		message: "Unauthorized! Please sync with Google.",
-// 		// 	};
-// 		// }
-// 		return {
-// 			status: 500,
-// 			message: "An error occurred while scheduling the meeting.",
-// 		};
-// 	}
-// };
+		return {
+			status: 200,
+			data: {
+				orderId,
+				paymentId: payment.payment_id,
+				amount: payment.payment_amount,
+				currency: payment.payment_currency,
+				status: paymentStatus,
+				isPaymentSuccessful: validPaymentStatuses.includes(paymentStatus),
+				paymentMethod: payment.payment_method,
+				paymentTime: payment.payment_completion_time,
+				refundStatus: payment.refund_status,
+			},
+		};
+	} catch (error) {
+		console.error("Payment error:", error);
+		return {
+			status: 500,
+			data: {
+				orderId: null,
+				paymentId: null,
+				amount: null,
+				currency: null,
+				status: null,
+				isPaymentSuccessful: false,
+				paymentMethod: null,
+				paymentTime: null,
+				refundStatus: null,
+			},
+			error: error.message,
+		};
+	}
+};
 
 export const cancelSheduledMeeting = async (userId, meetingId) => {
 	try {
@@ -660,58 +601,6 @@ export const cancelSheduledMeeting = async (userId, meetingId) => {
 		};
 	}
 };
-
-// export const cancelSheduledMeeting = async (userId, meetingId) => {
-// 	try {
-// 		const user = await UserModel.findOne({ _id: userId });
-// 		oAuth2Client.setCredentials(user.meetingToken);
-// 		const meeting = await BookingModel.findOne({
-// 			_id: meetingId,
-// 			userId: user._id,
-// 		});
-// 		const event = await EventModel.findOne({
-// 			userId: user._id,
-// 			bookings: meetingId,
-// 		});
-// 		if (!user || !meeting) {
-// 			return {
-// 				status: 404,
-// 				message: "User or meeting not found",
-// 			};
-// 		}
-// 		// Cancel the meeting in Google Calendar
-// 		const calendar = google.calendar({
-// 			version: "v3",
-// 			auth: oAuth2Client,
-// 		});
-
-// 		await calendar.events.delete({
-// 			calendarId: "primary",
-// 			eventId: meeting.googleEventId,
-// 		});
-
-// 		// Delete the meeting from the database
-// 		await EventModel.findByIdAndUpdate(event[0]._id, {
-// 			$pull: { bookings: meetingId },
-// 		});
-// 		const response = await BookingModel.findOneAndDelete({
-// 			_id: meetingId,
-// 			userId: user._id,
-// 		});
-
-// 		return {
-// 			status: 200,
-// 			message: "scheduled meeting deleted successfully",
-// 			data: response,
-// 		};
-// 	} catch (error) {
-// 		console.error("Error cancelling scheduled meeting:", error);
-// 		return {
-// 			status: 500,
-// 			message: "An error occurred while cancelling scheduled meeting.",
-// 		};
-// 	}
-// };
 
 export const getAllSheduledMeeting = async (userId) => {
 	try {

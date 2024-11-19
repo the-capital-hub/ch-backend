@@ -12,12 +12,16 @@ import {
 	cancelSheduledMeetingController,
 	getALLScheduledMeetings,
 	getEventsByUsernameController,
+	createPaymentSessionController,
+	paymentVerifyController,
 } from "../controllers/meetingController.js";
 
 const router = express.Router();
 // http://localhost:8080/meetings/
 router.get("/getEvents/:username", getEventsByUsernameController);
 router.post("/scheduleMeeting", scheduleMeetingController);
+router.post("/createPaymentSession", createPaymentSessionController);
+router.post("/verifyPayment", paymentVerifyController);
 router.get(
 	"/getSchedulePageData/:username/:eventId",
 	getSchedulePageDataController
