@@ -317,6 +317,10 @@ const userSchema = new Schema(
 			type: Schema.Types.Boolean,
 			ref: "Availability",
 		},
+		isAdmin: {
+			type: Boolean,
+			default: false,
+		},
 	},
 	{
 		timestamps: true,
