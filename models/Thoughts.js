@@ -28,13 +28,13 @@ const thoughtSchema = new mongoose.Schema(
 					type: mongoose.Schema.Types.ObjectId,
 					ref: "Users",
 				},
-				likes: [
+				upvotes: [
 					{
 						type: mongoose.Schema.Types.ObjectId,
 						ref: "Users",
 					},
 				],
-				comments: [
+				suggestions: [
 					{
 						comment: {
 							type: String,
