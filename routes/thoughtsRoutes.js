@@ -10,7 +10,7 @@ import {
 	upvoteDownvoteAnswerController,
 	addSuggestionsToAnswerController,
 	likeUnlikeSuggestionOfAnswerController,
-} from "../controllers/ThoughtsController.js";
+} from "../controllers/thoughtsController.js";
 
 const router = express.Router();
 
