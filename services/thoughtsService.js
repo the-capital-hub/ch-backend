@@ -122,7 +122,26 @@ export const upvoteDownvoteQuestion = async (userId, questionId) => {
 
 export const getQuestions = async (req, res) => {
 	try {
-		const thoughts = await ThoughtModel.find();
+		const thoughts = await ThoughtModel.find()
+			.populate("user")
+			.populate("upvotes")
+			.populate({
+				path: "answer",
+				populate: [
+					{
+						path: "user",
+					},
+					{
+						path: "upvotes",
+					},
+					{
+						path: "suggestions.user",
+					},
+					{
+						path: "suggestions.likes",
+					},
+				],
+			});
 
 		if (!thoughts) {
 			return {
@@ -335,7 +354,7 @@ export const likeUnlikeSuggestionOfAnswer = async (
 	userId,
 	questionId,
 	answerId,
-  suggestionId
+	suggestionId
 ) => {
 	try {
 		if (!userId || !questionId || !answerId || !suggestionId) {

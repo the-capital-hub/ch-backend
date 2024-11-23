@@ -41,6 +41,7 @@ export const upvoteQuestionController = async (req, res) => {
 export const getQuestionsController = async (req, res) => {
 	try {
 		const response = await getQuestions();
+		// console.log("Questions:", response);
 		res.status(response.status).send(response);
 	} catch (error) {
 		console.error(error);

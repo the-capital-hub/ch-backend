@@ -2,6 +2,9 @@ import mongoose from "mongoose";
 const { ObjectId } = mongoose.Types;
 import { UserModel } from "../models/User.js";
 import { PostModel } from "../models/Post.js";
+import { EventModel } from "../models/Event.js";
+import { ThoughtModel } from "../models/Thoughts.js";
+import { BookingModel } from "../models/Bookings.js";
 import { UserAnalyticsModel } from "../models/UserAnalytics.js";
 import { ConnectionModel } from "../models/Connection.js";
 //import { comparePassword } from "../utils/passwordManager.js";
@@ -1424,6 +1427,62 @@ export const saveMeetingToken = async (userId, token) => {
 		return {
 			status: 500,
 			message: "An error occurred while saving meeting token.",
+		};
+	}
+};
+
+export const getUserMilestones = async (userId) => {
+	try {
+		// Validate userId
+		if (!mongoose.Types.ObjectId.isValid(userId)) {
+			return {
+				status: 400,
+				message: "Invalid user ID",
+			};
+		}
+
+		// Fetch all data concurrently
+		const [user, posts, thoughts, bookings, events] = await Promise.all([
+			UserModel.findById(userId),
+			PostModel.find({ user: userId }),
+			ThoughtModel.find({ "answer.user": userId }),
+			BookingModel.find({ userId }),
+			EventModel.find({ userId }),
+		]);
+
+		// If user doesn't exist, return early
+		if (!user) {
+			return {
+				status: 404,
+				message: "User not found",
+			};
+		}
+
+		// Filter polls from posts
+		const userPolls = posts.filter(
+			(post) =>
+				post.pollOptions &&
+				Array.isArray(post.pollOptions) &&
+				post.pollOptions.length > 1
+		);
+
+		return {
+			status: 200,
+			message: "User milestones retrieved",
+			data: {
+				user,
+				userPosts: posts,
+				userPolls,
+				userThoughts: thoughts,
+				userBookings: bookings,
+				events,
+			},
+		};
+	} catch (error) {
+		console.error("Error getting user milestones:", error);
+		return {
+			status: 500,
+			message: "Error fetching user data",
 		};
 	}
 };
