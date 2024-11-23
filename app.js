@@ -29,7 +29,7 @@ import vcRoutes from "./routes/vcRoute.js";
 import newsRouter from "./routes/newsRoutes.js";
 import meetingsRoutes from "./routes/meetingsRoutes.js";
 import ResourceRouter from "./routes/resourceRoute.js";
-import ThoughtsRoutes from "./routes/ThoughtsRoutes.js";
+import ThoughtsRoutes from "./routes/thoughtsRoutes.js";
 
 const allowedOrigins = [
 	"http://localhost:3000",
