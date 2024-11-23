@@ -41,6 +41,7 @@ import {
 	getUserAnalyticsController,
 	getUserProfileViewsController,
 	saveMeetingTokenController,
+	getUserMilestonesController,
 } from "../controllers/userData.js";
 
 import { authenticateToken } from "../middlewares/authenticateToken.js";
@@ -125,5 +126,8 @@ router.post("/getUserByIdBody", getUserByIdBodyController);
 router.post("/createSecretKey", createSecretKeyController);
 
 router.post("/saveMeetingToken", saveMeetingTokenController);
+
+// for user milestones
+router.get("/getUserMilestones", getUserMilestonesController);
 
 export default router;

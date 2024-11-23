@@ -32,6 +32,7 @@ import {
 	getUserAnalytics,
 	getUserProfileViews,
 	saveMeetingToken,
+	getUserMilestones,
 } from "../services/userService.js";
 
 import { sendMail } from "../utils/mailHelper.js";
@@ -1243,6 +1244,21 @@ export const saveMeetingTokenController = async (req, res) => {
 		res.status(500).send({
 			status: 500,
 			message: "An error occurred while saving meeting token.",
+		});
+	}
+};
+
+export const getUserMilestonesController = async (req, res) => {
+	try {
+		const { userId } = req;
+		const response = await getUserMilestones(userId);
+		res.status(response.status).send(response);
+		return response;
+	} catch (error) {
+		console.error(error);
+		res.status(500).send({
+			status: 500,
+			message: "An error occurred while getting user milestones.",
 		});
 	}
 };
