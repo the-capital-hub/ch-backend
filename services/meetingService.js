@@ -486,7 +486,7 @@ export const createPaymentSession = async (data) => {
 				customer_id: customerId,
 				customer_name: data.name.trim(),
 				customer_email: data.email.toLowerCase().trim(),
-				customer_phone: "+919650515013",
+				customer_phone: "+919999999999",
 			},
 			order_expiry_time: new Date(Date.now() + 30 * 60 * 1000).toISOString(), // 30 minutes expiry
 		};
