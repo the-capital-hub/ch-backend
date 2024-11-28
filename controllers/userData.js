@@ -1042,8 +1042,8 @@ export const googleRegisterController = async (req, res) => {
 
 export const linkedInLoginController = async (req, res) => {
 	try {
-		const { code } = req.body;
-		const redirectUri = "https://thecapitalhub.in/login";
+		const { code, REDIRECT_URI } = req.body;
+		const redirectUri = REDIRECT_URI;
 		// Exchange code for token
 		const tokenResponse = await fetch(
 			"https://www.linkedin.com/oauth/v2/accessToken",
