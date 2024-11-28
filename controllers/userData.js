@@ -45,7 +45,9 @@ import axios from "axios";
 import { InvestorModel } from "../models/Investor.js";
 import { UserAnalyticsModel } from "../models/UserAnalytics.js";
 import { get } from "mongoose";
-import fetch from "node-fetch"
+import fetch from "node-fetch";
+import moment from "moment";
+
 export const createUser = async (req, res) => {
 	try {
 		const file = req.file;
@@ -1088,8 +1090,11 @@ export const linkedInLoginController = async (req, res) => {
 			throw new Error("User Does Not Exist");
 		}
 
+		const expiryDate = moment().add(30, 'days').toISOString(); // 30 days from now
+
 		// Update user with linkedinId
 		user.linkedinId = linkedinId; // Set the linkedinId
+		user.linkedinTokenExpiryDate = expiryDate;
 		await user.save(); // Save the updated user record
 
 		const token = jwt.sign(

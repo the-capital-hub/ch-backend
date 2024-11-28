@@ -41,6 +41,9 @@ const userSchema = new Schema(
 		linkedinId: {
 			type: String,
 		},
+		linkedinTokenExpiryDate: {
+			type: Date
+		},
 		linkedin: { type: String },
 		userName: { type: String },
 		phoneNumber: {

@@ -6,6 +6,8 @@ import { Server } from "socket.io";
 import multer from "multer";
 import connectDB from "./constants/db.js";
 import xlsx from "xlsx";
+import cron from "node-cron";
+import moment from "moment";
 //routes
 import usersData from "./routes/usersData.js";
 import postData from "./routes/postData.js";
@@ -101,6 +103,21 @@ const io = new Server(server, {
 		origin: "*",
 	},
 });
+
+// Cron job to remove expired LinkedIn tokens
+cron.schedule('0 0 * * *', async () => {  
+	try {
+	  const now = moment().toISOString(); 
+  
+	  const result = await User.updateMany(
+		{ linkedinTokenExpiryDate: { $lt: now } },  // Find users with expired tokens
+		{ $unset: { linkedinId: "", linkedinTokenExpiryDate: "" } }  // Remove the fields from the document
+	  );
+	  console.log(`Expired tokens removed from ${result.modifiedCount} users.`);
+	} catch (error) {
+	  console.error("Error removing expired tokens:", error);
+	}
+  });
 
 let activeUsers = [];
 io.on("connection", (socket) => {
