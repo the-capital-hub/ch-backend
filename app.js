@@ -33,6 +33,9 @@ import meetingsRoutes from "./routes/meetingsRoutes.js";
 import ResourceRouter from "./routes/resourceRoute.js";
 import ThoughtsRoutes from "./routes/thoughtsRoutes.js";
 
+//model import for cron
+import { UserModel } from "./models/User.js";
+
 const allowedOrigins = [
 	"http://localhost:3000",
 	"https://www.thecapitalhub.in",
@@ -109,7 +112,7 @@ cron.schedule('0 0 * * *', async () => {
 	try {
 	  const now = moment().toISOString(); 
   
-	  const result = await User.updateMany(
+	  const result = await UserModel.updateMany(
 		{ linkedinTokenExpiryDate: { $lt: now } },  // Find users with expired tokens
 		{ $unset: { linkedinId: "", linkedinTokenExpiryDate: "" } }  // Remove the fields from the document
 	  );
