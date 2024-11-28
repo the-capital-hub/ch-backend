@@ -45,7 +45,7 @@ import axios from "axios";
 import { InvestorModel } from "../models/Investor.js";
 import { UserAnalyticsModel } from "../models/UserAnalytics.js";
 import { get } from "mongoose";
-
+import fetch from "node-fetch"
 export const createUser = async (req, res) => {
 	try {
 		const file = req.file;
@@ -1097,28 +1097,6 @@ export const linkedInLoginController = async (req, res) => {
 			process.env.JWT_SECRET_KEY
 		);
 		user.password = undefined;
-
-		// const postResponse = await fetch("https://api.linkedin.com/v2/shares", {
-		// 	method: "POST",
-		// 	headers: {
-		// 		Authorization: `Bearer ${tokenData.access_token}`,
-		// 		"Content-Type": "application/json",
-		// 	},
-		// 	body: JSON.stringify({
-		// 		content: {
-		// 			contentEntities: [{
-		// 				entityLocation: "https://www.wired.com/story/tech-ceos-trump-claims-are-courting-him",
-		// 			}],
-		// 			title: "Test Post",
-		// 		},
-		// 		owner: `urn:li:person:${profileData.sub}`,
-		// 		text: {
-		// 			text: "Hello LinkedIn! This is a test post.",
-		// 		},
-		// 	}),
-		// });
-
-		// console.log(postResponse);
 
 		res.json({
 			status: 200,
