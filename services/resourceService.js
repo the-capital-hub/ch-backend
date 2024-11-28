@@ -9,7 +9,7 @@ import { v4 as uuidv4 } from "uuid";
 
 Cashfree.XClientId = process.env.CASHFREE_CLIENT_ID;
 Cashfree.XClientSecret = process.env.CASHFREE_SECRET_KEY;
-Cashfree.XEnvironment = Cashfree.Environment.SANDBOX;
+Cashfree.XEnvironment = Cashfree.Environment.PRODUCTION;
 
 // Create a new resource
 export const create = async (resourceData, files) => {
@@ -177,54 +177,6 @@ export const createPaymentSession = async (data) => {
 		throw new Error(`Error creating payment session: ${error.message}`);
 	}
 };
-
-// export const verifyPayment = async (userId, orderId) => {
-// 	console.log("orderId", orderId);
-// 	try {
-// 		// Fetch user details
-// 		const user = await UserModel.findById(userId);
-// 		// Fetch payment details
-// 		const response = await Cashfree.PGOrderFetchPayments("2023-08-01", orderId);
-
-// 		// Validate response
-// 		if (!response?.data) {
-// 			throw new Error("Invalid response from payment gateway");
-// 		}
-
-// 		// Extract payment status
-// 		const payment = response.data[0] || {};
-
-// 		const paymentData = {
-// 			paymentId: payment.cf_payment_id,
-// 			resourceId: payment.resource_id,
-// 			orderId: payment.order_id,
-// 			amount: payment.order_amount,
-// 			currency: payment.payment_currency,
-// 			status: 200,
-// 			paymentStatus: payment.payment_status,
-// 			paymentMethod: payment.payment_method,
-// 			paymentGroup: payment.payment_group,
-// 			paymentTime: payment.payment_completion_time,
-// 			refundStatus: payment.refund_status,
-// 		};
-
-// 		const resource = await Resource.findByIdAndUpdate(
-// 			payment.resource_id,
-// 			{
-// 				purchased_users: [...user.purchased_resources, userId],
-// 			},
-// 			{
-// 				new: true,
-// 				runValidators: true,
-// 			}
-// 		);
-//     console.log("resource", resource);
-// 		console.log("payment verify response", paymentData);
-// 		return paymentData;
-// 	} catch (error) {
-// 		throw new Error(`Error verifying payment: ${error.message}`);
-// 	}
-// };
 
 export const verifyPayment = async (userId, orderId, resourceId) => {
 	console.log("orderId", orderId);
