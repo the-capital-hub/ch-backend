@@ -45,6 +45,8 @@ import axios from "axios";
 import { InvestorModel } from "../models/Investor.js";
 import { UserAnalyticsModel } from "../models/UserAnalytics.js";
 import { get } from "mongoose";
+import fetch from "node-fetch";
+import moment from "moment";
 
 export const createUser = async (req, res) => {
 	try {
@@ -1040,8 +1042,8 @@ export const googleRegisterController = async (req, res) => {
 
 export const linkedInLoginController = async (req, res) => {
 	try {
-		const { code } = req.body;
-		const redirectUri = "https://thecapitalhub.in/login";
+		const { code, REDIRECT_URI } = req.body;
+		const redirectUri = REDIRECT_URI;
 		// Exchange code for token
 		const tokenResponse = await fetch(
 			"https://www.linkedin.com/oauth/v2/accessToken",
@@ -1088,8 +1090,11 @@ export const linkedInLoginController = async (req, res) => {
 			throw new Error("User Does Not Exist");
 		}
 
+		const expiryDate = moment().add(30, 'days').toISOString(); // 30 days from now
+
 		// Update user with linkedinId
 		user.linkedinId = linkedinId; // Set the linkedinId
+		user.linkedinTokenExpiryDate = expiryDate;
 		await user.save(); // Save the updated user record
 
 		const token = jwt.sign(
@@ -1097,28 +1102,6 @@ export const linkedInLoginController = async (req, res) => {
 			process.env.JWT_SECRET_KEY
 		);
 		user.password = undefined;
-
-		// const postResponse = await fetch("https://api.linkedin.com/v2/shares", {
-		// 	method: "POST",
-		// 	headers: {
-		// 		Authorization: `Bearer ${tokenData.access_token}`,
-		// 		"Content-Type": "application/json",
-		// 	},
-		// 	body: JSON.stringify({
-		// 		content: {
-		// 			contentEntities: [{
-		// 				entityLocation: "https://www.wired.com/story/tech-ceos-trump-claims-are-courting-him",
-		// 			}],
-		// 			title: "Test Post",
-		// 		},
-		// 		owner: `urn:li:person:${profileData.sub}`,
-		// 		text: {
-		// 			text: "Hello LinkedIn! This is a test post.",
-		// 		},
-		// 	}),
-		// });
-
-		// console.log(postResponse);
 
 		res.json({
 			status: 200,
