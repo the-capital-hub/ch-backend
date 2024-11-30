@@ -134,6 +134,10 @@ export const getUserByUserName = async (username) => {
 };
 
 export const loginUserService = async ({ phoneNumber, password }) => {
+
+	if(!phoneNumber){
+		throw new Error("PhoneNumber, Email or Username is required")
+	}
 	const user = await UserModel.findOne({
 		phoneNumber,
 		userStatus: "active",
@@ -144,7 +148,7 @@ export const loginUserService = async ({ phoneNumber, password }) => {
 
 	if (!user) {
 		const existingUser = await UserModel.findOne({
-			$or: [{ email: phoneNumber }, { userName: phoneNumber }],
+			$or: [{ email: phoneNumber.toLowerCase() }, { userName: phoneNumber.toLowerCase() }],
 		});
 		console.log(existingUser);
 		if (!existingUser) throw new Error("Invalid credentials");
