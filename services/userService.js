@@ -150,7 +150,6 @@ export const loginUserService = async ({ phoneNumber, password }) => {
 		const existingUser = await UserModel.findOne({
 			$or: [{ email: phoneNumber.toLowerCase() }, { userName: phoneNumber.toLowerCase() }],
 		});
-		console.log(existingUser);
 		if (!existingUser) throw new Error("Invalid credentials");
 		await comparePassword(password, existingUser.password);
 		return existingUser;
