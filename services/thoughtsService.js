@@ -1,5 +1,7 @@
 import { UserModel } from "../models/User.js";
 import { ThoughtModel } from "../models/Thoughts.js";
+import { PostModel } from "../models/Post.js";
+import { populate } from "dotenv";
 
 export const createQuestion = async (userId, data) => {
 	try {
@@ -167,6 +169,42 @@ export const getQuestions = async (req, res) => {
 export const getQuestionById = async (questionId) => {
 	try {
 		const question = await ThoughtModel.findOne({ _id: questionId })
+			.populate({
+				path: "user",
+				populate: {
+					path: "startUp",
+				},
+			})
+			.populate("upvotes")
+			.populate({
+				path: "answer",
+				populate: [
+					{
+						path: "user",
+					},
+					{
+						path: "upvotes",
+					},
+					{
+						path: "suggestions.user",
+					},
+					{
+						path: "suggestions.likes",
+					},
+				],
+			});
+
+		const posts = await PostModel.find({ user: question.user._id })
+			.populate({
+				path: "user",
+				populate: {
+					path: "startUp",
+				},
+			})
+			.populate("likes")
+			.populate("comments");
+
+		const userThoughts = await ThoughtModel.find({ user: question.user._id })
 			.populate("user")
 			.populate("upvotes")
 			.populate({
@@ -196,7 +234,7 @@ export const getQuestionById = async (questionId) => {
 
 		return {
 			status: 200,
-			data: question,
+			data: { question, posts, userThoughts },
 			message: "Question fetched successfully",
 		};
 	} catch (error) {
