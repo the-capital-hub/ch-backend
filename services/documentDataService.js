@@ -7,6 +7,7 @@ import { UserModel } from "../models/User.js";
 //import { cloudinary } from "../utils/uploadImage.js";
 import { uploadFileToDrive } from "../utils/googleDriveService.js";
 import FileModel from "../models/File.js";
+import { cloudinary } from "../utils/uploadImage.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -86,46 +87,62 @@ export const getFolderByUser = async (oneLinkId) => {
 
 export const uploadDocument = async (file, userId, folderName, videoUrl) => {
   try {
-     //make file ready to upload
-     const fileBuffer = await fs.readFile(file.path);
-     const timestamp = Date.now();
-     const fileName = `${timestamp}_${file.originalname}`;
+    // Read the file into a buffer
+    const fileBuffer = await fs.readFile(file.path);
+    const timestamp = Date.now();
+    const fileName = `${timestamp}_${file.originalname}`;
 
-     const fileObject = {
+    // Create file object
+    const fileObject = {
       buffer: fileBuffer,
       mimeType: file.mimetype,
       originalname: file.originalname,
     };
 
-    const driveResponse = await uploadFileToDrive(fileObject, fileName);
+    let fileUrl = ""; // Initialize variable for fileUrl
 
+    if (videoUrl) {
+      // Upload video or image to Cloudinary
+      const { secure_url } = await cloudinary.uploader.upload(file.path, {
+        folder: `${process.env.CLOUDINARY_FOLDER}/onelinkPitch`,
+        format: "webp",
+        unique_filename: true,
+      });
 
-     // Check if driveResponse contains webViewLink
-    if (!driveResponse.webViewLink) {
-      throw new Error("Google Drive response does not contain webViewLink");
+      fileUrl = secure_url; // Store the secure URL from Cloudinary
+    } else {
+      // Upload file to Google Drive
+      const driveResponse = await uploadFileToDrive(fileObject, fileName);
+      
+      // Check if Google Drive response contains webViewLink
+      if (!driveResponse.webViewLink) {
+        throw new Error("Google Drive response does not contain webViewLink");
+      }
+
+      fileUrl = driveResponse.webViewLink; // Store the Drive URL
     }
- 
-let newFile;
-    if (videoUrl){
-      console.log(videoUrl);
+
+    // Create a new file model with the appropriate URL
+    let newFile;
+    if (videoUrl) {
       newFile = new FileModel({
         userId: userId,
         fileName: fileName,
         folderName: folderName,
-        fileUrl: driveResponse.webViewLink,
-        videoUrl: videoUrl
+        fileUrl: fileUrl,
+        videoUrl: videoUrl, // Store the original videoUrl if provided
+      });
+    } else {
+      newFile = new FileModel({
+        userId: userId,
+        fileName: fileName,
+        folderName: folderName,
+        fileUrl: fileUrl,
       });
     }
-    else{
-     newFile = new FileModel({
-       userId: userId,
-       fileName: fileName,
-       folderName: folderName,
-       fileUrl: driveResponse.webViewLink,
-     });
-    }
- 
-     await newFile.save();
+
+    // Save the file metadata to the database
+    await newFile.save();
 
     return {
       status: 200,
@@ -134,9 +151,10 @@ let newFile;
     };
   } catch (error) {
     console.error("Error uploading document:", error);
-    throw new Error("Error uploading document");
+    throw new Error(`Error uploading document: ${error.message}`);
   }
 };
+
 
 
 
