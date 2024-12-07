@@ -42,10 +42,10 @@ export const getFolderByUserController = async (req, res) => {
 
 export const uploadDocumentController = async (req, res) => {
   try {
-        const { userId, folderName } = req.body;
+        const { userId, folderName, videoUrl } = req.body;
     const file = req.file; // Assuming you are using multer to handle file upload
     console.log(file)
-    const response = await uploadDocument(file, userId, folderName);
+    const response = await uploadDocument(file, userId, folderName, videoUrl);
     res.status(response.status).send(response);
   } catch (error) {
     console.error(error);

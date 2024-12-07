@@ -84,7 +84,7 @@ export const getFolderByUser = async (oneLinkId) => {
 };
 
 
-export const uploadDocument = async (file, userId, folderName) => {
+export const uploadDocument = async (file, userId, folderName, videoUrl) => {
   try {
      //make file ready to upload
      const fileBuffer = await fs.readFile(file.path);
@@ -105,12 +105,25 @@ export const uploadDocument = async (file, userId, folderName) => {
       throw new Error("Google Drive response does not contain webViewLink");
     }
  
-     const newFile = new FileModel({
+let newFile;
+    if (videoUrl){
+      console.log(videoUrl);
+      newFile = new FileModel({
+        userId: userId,
+        fileName: fileName,
+        folderName: folderName,
+        fileUrl: driveResponse.webViewLink,
+        videoUrl: videoUrl
+      });
+    }
+    else{
+     newFile = new FileModel({
        userId: userId,
        fileName: fileName,
        folderName: folderName,
        fileUrl: driveResponse.webViewLink,
      });
+    }
  
      await newFile.save();
 
