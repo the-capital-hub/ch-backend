@@ -21,9 +21,22 @@ import { OAuth2Client } from "google-auth-library";
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 import { formatInTimeZone } from "date-fns-tz";
 import { addMinutes } from "date-fns";
+import nodemailer from "nodemailer";
+import ejs from "ejs";
+import path from "path";
 
 const adminMail = "learn.capitalhub@gmail.com";
 import connectDB from "../constants/db.js";
+
+const transporter = nodemailer.createTransport({
+	service:"gmail",
+	secure: false,
+	auth: {
+		user: process.env.EMAIL_USER, 
+		pass: process.env.EMAIL_PASS,
+	},
+});
+
 export const getUsersService = async (info) => {
 	try {
 		const products = await UserModel.find({}).toArray();
@@ -1487,5 +1500,125 @@ export const getUserMilestones = async (userId) => {
 			status: 500,
 			message: "Error fetching user data",
 		};
+	}
+};
+
+export const getInactiveFounders = async () => {
+	try {
+	  const currentDate = new Date();
+	  
+	  const sevenDaysAgo = new Date(currentDate);
+	  sevenDaysAgo.setDate(currentDate.getDate() - 7);
+  
+	  const thirtyDaysAgo = new Date();
+	  thirtyDaysAgo.setDate(new Date().getDate() - 30);
+  
+	  const startups = await StartUpModel.find()
+		.populate({
+		  path: "founderId",
+		  select: "companyUpdate email firstName lastName",
+		  populate: {
+			path: "companyUpdate",
+			select: "createdAt", 
+		  },
+		});
+  
+	  const inactiveFounders7Days = [];
+	  const inactiveFounders30Days = [];
+  
+	  startups.forEach((startup) => {
+		if (!startup.founderId) {
+		  return;
+		}
+  
+		const founder = startup.founderId;
+		const companyUpdates = founder.companyUpdate || [];
+  
+		if (companyUpdates.length > 0) {
+		  companyUpdates.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  
+		  const latestPostDate = new Date(companyUpdates[0].createdAt);
+  
+		  const isActiveIn7Days = latestPostDate >= sevenDaysAgo;
+  
+		  const isActiveIn30Days = latestPostDate >= thirtyDaysAgo;
+  
+		  if (!isActiveIn7Days && isActiveIn30Days) {
+			inactiveFounders30Days.push({
+			  user_first_name: founder.firstName,
+			  user_last_name: founder.lastName,
+			  user_email: founder.email,
+			});
+		  }
+  
+		  if (!isActiveIn30Days) {
+			inactiveFounders30Days.push({
+			  user_first_name: founder.firstName,
+			  user_last_name: founder.lastName,
+			  user_email: founder.email,
+			});
+		  }
+		} else {
+		  inactiveFounders30Days.push({
+			user_first_name: founder.firstName,
+			user_last_name: founder.lastName,
+			user_email: founder.email,
+		  });
+		}
+	  });
+  
+	  return {
+		inactiveFounders7Days,
+		inactiveFounders30Days,
+	  };
+	} catch (error) {
+	  console.error("Error fetching inactive founders:", error);
+	  return {
+		status: 500,
+		message: "Error fetching inactive founders",
+	  };
+	}
+  };
+  
+  export const sendMailtoInactiveFounders = async () => {
+	try {
+		const { inactiveFounders7Days, inactiveFounders30Days } = await getInactiveFounders();
+
+		for (const founder of inactiveFounders7Days) {
+			console.log("sending mail to 7 day inactive user")
+			const emailContent = await ejs.renderFile(
+				'./public/7dayemail.ejs',
+				{ firstName: founder.user_first_name, lastName: founder.user_last_name, dashboardLink: 'https://thecapitalhub.in/home' }
+			);
+
+			// Send email using Nodemailer
+			await transporter.sendMail({
+				from: `"The Capital Hub" <${process.env.EMAIL_USER}>`, 
+				to: founder.user_email, 
+				subject: 'Inactive Reminder', 
+				html: emailContent, 
+			});
+		}
+
+		for (const founder of inactiveFounders30Days) {
+			console.log("sending mail to 30 days inactive users")
+			const emailContent = await ejs.renderFile(
+				'./public/30dayemail.ejs',
+				{ firstName: founder.user_first_name, lastName: founder.user_last_name, dashboardLink: 'https://thecapitalhub.in/home' }
+			);
+
+			// Send email using Nodemailer
+			await transporter.sendMail({
+				from: `"The Capital Hub" <${process.env.EMAIL_USER}>`,
+				to: founder.user_email, 
+				subject: 'Re-engagement Reminder', 
+				html: emailContent, 
+			});
+		}
+
+		return "Emails sent"
+	} catch (error) {
+		console.error("Error sending emails:", error);
+		return error
 	}
 };

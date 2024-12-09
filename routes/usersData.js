@@ -42,6 +42,7 @@ import {
 	getUserProfileViewsController,
 	saveMeetingTokenController,
 	getUserMilestonesController,
+	getInactiveFounderController
 } from "../controllers/userData.js";
 
 import { authenticateToken } from "../middlewares/authenticateToken.js";
@@ -129,5 +130,9 @@ router.post("/saveMeetingToken", saveMeetingTokenController);
 
 // for user milestones
 router.get("/getUserMilestones", getUserMilestonesController);
+
+//getInactive founders
+
+router.get('/inactive-founders', getInactiveFounderController);
 
 export default router;

@@ -33,6 +33,8 @@ import {
 	getUserProfileViews,
 	saveMeetingToken,
 	getUserMilestones,
+	getInactiveFounders,
+	sendMailtoInactiveFounders
 } from "../services/userService.js";
 
 import { sendMail } from "../utils/mailHelper.js";
@@ -1244,3 +1246,19 @@ export const getUserMilestonesController = async (req, res) => {
 		});
 	}
 };
+
+export const getInactiveFounderController = async (req, res) => {
+	try {
+		const response = await getInactiveFounders();
+		res.send(response);
+		return response;
+	} catch (error) {
+		console.error(error);
+		res.status(500).send({
+			status: 500,
+			message: "An error occurred while getting inactive founders.",
+		});
+	}
+};
+
+
