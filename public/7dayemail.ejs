@@ -1,0 +1,56 @@
+<!-- 7 Days Inactive Email Template -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inactive Reminder</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      background-color: #f4f4f4;
+      color: #333;
+      padding: 20px;
+    }
+    .container {
+      background-color: #ffffff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    h2 {
+      color: #333;
+    }
+    p {
+      font-size: 16px;
+      color: #666;
+    }
+    a {
+      background-color: #007bff;
+      color: #fff;
+      text-decoration: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <img src="https://thecapitalhub.in/static/media/logo-white.c4e4dacf1f6283c93e11.png" alt="Company Logo" style="max-width: 400px; margin-bottom: 20px;">
+    <h2>Hi <%= firstName %> <%= lastName %>,</h2>
+    <p>We noticed that you haven't shared any updates with your company in the last 7 days. We understand that things can get busy, but your community and team are waiting to hear from you!</p>
+    
+    <p>We encourage you to post any updates, announcements, or progress to keep your startup in the loop. Don't miss out on the opportunity to engage with your network.</p>
+
+    <p>Click below to share your latest company update:</p>
+    
+    <p><a href="<%= dashboardLink %>">Post an Update</a></p>
+    
+    <p>Let us know if you need any help. We're here for you!</p>
+
+    <p>Best regards,</p>
+    <p>The CapitalHub Team</p>
+  </div>
+</body>
+</html>

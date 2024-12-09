@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Re-engagement Reminder</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      background-color: #f4f4f4;
+      color: #333;
+      padding: 20px;
+    }
+    .container {
+      background-color: #ffffff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    h2 {
+      color: #333;
+    }
+    p {
+      font-size: 16px;
+      color: #666;
+    }
+    a {
+      background-color: #007bff;
+      color: #fff;
+      text-decoration: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <img src="https://thecapitalhub.in/static/media/logo-white.c4e4dacf1f6283c93e11.png" alt="Company Logo" style="max-width: 400px; margin-bottom: 20px;">
+    <h2>Hi <%= firstName %> <%= lastName %>,</h2>
+    <p>It’s been over 30 days since your last post. We understand that you’ve been busy, but your followers and team are eager to hear what’s new with your startup!</p>
+    
+    <p>Don’t let your company go silent—keep your community engaged and show them your progress. Posting updates is a great way to keep your brand visible and active.</p>
+
+    <p>Click below to get back to your dashboard and share your latest update:</p>
+    
+    <p><a href="<%= dashboardLink %>">Post an Update</a></p>
+    
+    <p>We’re here to support you if you need any help along the way. Let’s get your startup back on track!</p>
+
+    <p>Best regards,</p>
+    <p>The CapitalHub Team</p>
+  </div>
+</body>
+</html>
