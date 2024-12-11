@@ -134,9 +134,8 @@ export const getUserByUserName = async (username) => {
 };
 
 export const loginUserService = async ({ phoneNumber, password }) => {
-
-	if(!phoneNumber){
-		throw new Error("PhoneNumber, Email or Username is required")
+	if (!phoneNumber) {
+		throw new Error("PhoneNumber, Email or Username is required");
 	}
 	const user = await UserModel.findOne({
 		phoneNumber,
@@ -148,7 +147,10 @@ export const loginUserService = async ({ phoneNumber, password }) => {
 
 	if (!user) {
 		const existingUser = await UserModel.findOne({
-			$or: [{ email: phoneNumber.toLowerCase() }, { userName: phoneNumber.toLowerCase() }],
+			$or: [
+				{ email: phoneNumber.toLowerCase() },
+				{ userName: phoneNumber.toLowerCase() },
+			],
 		});
 		if (!existingUser) throw new Error("Invalid credentials");
 		await comparePassword(password, existingUser.password);
@@ -1486,6 +1488,70 @@ export const getUserMilestones = async (userId) => {
 		return {
 			status: 500,
 			message: "Error fetching user data",
+		};
+	}
+};
+
+export const updateTopVoice = async (userId) => {
+	try {
+		const today = new Date();
+		const expiryDate = new Date(today);
+		expiryDate.setDate(today.getDate() + 30); // Set expiry to today's date + 30 days
+
+		const user = await UserModel.findById(userId);
+		if (!user) {
+			return {
+				status: 404,
+				message: "User  not found",
+			};
+		}
+
+		let updatedUser;
+		if (user.isTopVoice) {
+			// Update expiry date
+			updatedUser = await UserModel.updateOne(
+				{ _id: new ObjectId(userId) },
+				{
+					$set: {
+						"isTopVoice.status": true,
+						"isTopVoice.expiry": expiryDate,
+					},
+				}
+			);
+		} else {
+			// User is not a top voice, create it
+			updatedUser = await UserModel.updateOne(
+				{ _id: new ObjectId(userId) },
+				{
+					$set: {
+						isTopVoice: {
+							status: true,
+							expiry: expiryDate,
+						},
+					},
+				},
+				{ upsert: true }
+			);
+		}
+
+		if (updatedUser.modifiedCount > 0 || updatedUser.upsertedCount > 0) {
+			const updatedUserData = await UserModel.findById(userId); // Fetch the updated user data
+			return {
+				status: 200,
+				message: "Top voice updated",
+				user: updatedUserData,
+			};
+		} else {
+			return {
+				status: 400,
+				message: "No changes made",
+			};
+		}
+	} catch (error) {
+		console.error("Error updating top voice:", error);
+		return {
+			status: 500,
+			message: "Error updating top voice",
 		};
 	}
 };

@@ -42,6 +42,7 @@ import {
 	getUserProfileViewsController,
 	saveMeetingTokenController,
 	getUserMilestonesController,
+	updateTopVoiceController,
 } from "../controllers/userData.js";
 
 import { authenticateToken } from "../middlewares/authenticateToken.js";
@@ -129,5 +130,7 @@ router.post("/saveMeetingToken", saveMeetingTokenController);
 
 // for user milestones
 router.get("/getUserMilestones", getUserMilestonesController);
+
+router.patch("/updateTopVoice", updateTopVoiceController);
 
 export default router;
