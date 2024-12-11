@@ -33,8 +33,9 @@ import {
 	getUserProfileViews,
 	saveMeetingToken,
 	getUserMilestones,
+	updateTopVoice,
 	getInactiveFounders,
-	sendMailtoInactiveFounders
+	sendMailtoInactiveFounders,
 } from "../services/userService.js";
 
 import { sendMail } from "../utils/mailHelper.js";
@@ -432,9 +433,8 @@ export const verifyOtp = async (req, res) => {
 				isOTPVerified: response.data.isOTPVerified,
 				message: "OTP verified",
 			});
-		}
-		else {
-			throw new Error ("OTP Verification failed")
+		} else {
+			throw new Error("OTP Verification failed");
 		}
 	} catch (err) {
 		return res.status(500).json({ error: "Failed to fetch data" });
@@ -1091,7 +1091,7 @@ export const linkedInLoginController = async (req, res) => {
 			throw new Error("User Does Not Exist");
 		}
 
-		const expiryDate = moment().add(30, 'days').toISOString(); // 30 days from now
+		const expiryDate = moment().add(30, "days").toISOString(); // 30 days from now
 
 		// Update user with linkedinId
 		user.linkedinId = linkedinId; // Set the linkedinId
@@ -1247,6 +1247,22 @@ export const getUserMilestonesController = async (req, res) => {
 	}
 };
 
+
+export const updateTopVoiceController = async (req, res) => {
+	try {
+		const { userId } = req;
+		const response = await updateTopVoice(userId);
+		res.status(response.status).send(response);
+		return response;
+	} catch (error) {
+		console.error(error);
+		res.status(500).send({
+			status: 500,
+			message: "An error occurred while updating top voice.",
+		});
+	}
+};
+
 export const getInactiveFounderController = async (req, res) => {
 	try {
 		const response = await getInactiveFounders();
@@ -1256,9 +1272,7 @@ export const getInactiveFounderController = async (req, res) => {
 		console.error(error);
 		res.status(500).send({
 			status: 500,
-			message: "An error occurred while getting inactive founders.",
+			message: "An error occurred while updating top voice.",
 		});
 	}
 };
-
-

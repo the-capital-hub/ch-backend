@@ -29,10 +29,10 @@ const adminMail = "learn.capitalhub@gmail.com";
 import connectDB from "../constants/db.js";
 
 const transporter = nodemailer.createTransport({
-	service:"gmail",
+	service: "gmail",
 	secure: false,
 	auth: {
-		user: process.env.EMAIL_USER, 
+		user: process.env.EMAIL_USER,
 		pass: process.env.EMAIL_PASS,
 	},
 });
@@ -147,9 +147,8 @@ export const getUserByUserName = async (username) => {
 };
 
 export const loginUserService = async ({ phoneNumber, password }) => {
-
-	if(!phoneNumber){
-		throw new Error("PhoneNumber, Email or Username is required")
+	if (!phoneNumber) {
+		throw new Error("PhoneNumber, Email or Username is required");
 	}
 	const user = await UserModel.findOne({
 		phoneNumber,
@@ -161,7 +160,10 @@ export const loginUserService = async ({ phoneNumber, password }) => {
 
 	if (!user) {
 		const existingUser = await UserModel.findOne({
-			$or: [{ email: phoneNumber.toLowerCase() }, { userName: phoneNumber.toLowerCase() }],
+			$or: [
+				{ email: phoneNumber.toLowerCase() },
+				{ userName: phoneNumber.toLowerCase() },
+			],
 		});
 		if (!existingUser) throw new Error("Invalid credentials");
 		await comparePassword(password, existingUser.password);
@@ -1503,122 +1505,190 @@ export const getUserMilestones = async (userId) => {
 	}
 };
 
+export const updateTopVoice = async (userId) => {
+	try {
+		const today = new Date();
+		const expiryDate = new Date(today);
+		expiryDate.setDate(today.getDate() + 30); // Set expiry to today's date + 30 days
+
+		const user = await UserModel.findById(userId);
+		if (!user) {
+			return {
+				status: 404,
+				message: "User  not found",
+			};
+		}
+
+		let updatedUser;
+		if (user.isTopVoice) {
+			// Update expiry date
+			updatedUser = await UserModel.updateOne(
+				{ _id: new ObjectId(userId) },
+				{
+					$set: {
+						"isTopVoice.status": true,
+						"isTopVoice.expiry": expiryDate,
+					},
+				}
+			);
+		} else {
+			// User is not a top voice, create it
+			updatedUser = await UserModel.updateOne(
+				{ _id: new ObjectId(userId) },
+				{
+					$set: {
+						isTopVoice: {
+							status: true,
+							expiry: expiryDate,
+						},
+					},
+				},
+				{ upsert: true }
+			);
+		}
+
+		if (updatedUser.modifiedCount > 0 || updatedUser.upsertedCount > 0) {
+			const updatedUserData = await UserModel.findById(userId); // Fetch the updated user data
+			return {
+				status: 200,
+				message: "Top voice updated",
+				user: updatedUserData,
+			};
+		} else {
+			return {
+				status: 400,
+				message: "No changes made",
+			};
+		}
+	} catch (error) {
+		console.error("Error updating top voice:", error);
+		return {
+			status: 500,
+			message: "Error updating top voice",
+		};
+	}
+};
+
 export const getInactiveFounders = async () => {
 	try {
-	  const currentDate = new Date();
-	  
-	  const sevenDaysAgo = new Date(currentDate);
-	  sevenDaysAgo.setDate(currentDate.getDate() - 7);
-  
-	  const thirtyDaysAgo = new Date();
-	  thirtyDaysAgo.setDate(new Date().getDate() - 30);
-  
-	  const startups = await StartUpModel.find()
-		.populate({
-		  path: "founderId",
-		  select: "companyUpdate email firstName lastName",
-		  populate: {
-			path: "companyUpdate",
-			select: "createdAt", 
-		  },
+		const currentDate = new Date();
+
+		const sevenDaysAgo = new Date(currentDate);
+		sevenDaysAgo.setDate(currentDate.getDate() - 7);
+
+		const thirtyDaysAgo = new Date();
+		thirtyDaysAgo.setDate(new Date().getDate() - 30);
+
+		const startups = await StartUpModel.find().populate({
+			path: "founderId",
+			select: "companyUpdate email firstName lastName",
+			populate: {
+				path: "companyUpdate",
+				select: "createdAt",
+			},
 		});
-  
-	  const inactiveFounders7Days = [];
-	  const inactiveFounders30Days = [];
-  
-	  startups.forEach((startup) => {
-		if (!startup.founderId) {
-		  return;
-		}
-  
-		const founder = startup.founderId;
-		const companyUpdates = founder.companyUpdate || [];
-  
-		if (companyUpdates.length > 0) {
-		  companyUpdates.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-  
-		  const latestPostDate = new Date(companyUpdates[0].createdAt);
-  
-		  const isActiveIn7Days = latestPostDate >= sevenDaysAgo;
-  
-		  const isActiveIn30Days = latestPostDate >= thirtyDaysAgo;
-  
-		  if (!isActiveIn7Days && isActiveIn30Days) {
-			inactiveFounders30Days.push({
-			  user_first_name: founder.firstName,
-			  user_last_name: founder.lastName,
-			  user_email: founder.email,
-			});
-		  }
-  
-		  if (!isActiveIn30Days) {
-			inactiveFounders30Days.push({
-			  user_first_name: founder.firstName,
-			  user_last_name: founder.lastName,
-			  user_email: founder.email,
-			});
-		  }
-		} else {
-		  inactiveFounders30Days.push({
-			user_first_name: founder.firstName,
-			user_last_name: founder.lastName,
-			user_email: founder.email,
-		  });
-		}
-	  });
-  
-	  return {
-		inactiveFounders7Days,
-		inactiveFounders30Days,
-	  };
+
+		const inactiveFounders7Days = [];
+		const inactiveFounders30Days = [];
+
+		startups.forEach((startup) => {
+			if (!startup.founderId) {
+				return;
+			}
+
+			const founder = startup.founderId;
+			const companyUpdates = founder.companyUpdate || [];
+
+			if (companyUpdates.length > 0) {
+				companyUpdates.sort(
+					(a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+				);
+
+				const latestPostDate = new Date(companyUpdates[0].createdAt);
+
+				const isActiveIn7Days = latestPostDate >= sevenDaysAgo;
+
+				const isActiveIn30Days = latestPostDate >= thirtyDaysAgo;
+
+				if (!isActiveIn7Days && isActiveIn30Days) {
+					inactiveFounders30Days.push({
+						user_first_name: founder.firstName,
+						user_last_name: founder.lastName,
+						user_email: founder.email,
+					});
+				}
+
+				if (!isActiveIn30Days) {
+					inactiveFounders30Days.push({
+						user_first_name: founder.firstName,
+						user_last_name: founder.lastName,
+						user_email: founder.email,
+					});
+				}
+			} else {
+				inactiveFounders30Days.push({
+					user_first_name: founder.firstName,
+					user_last_name: founder.lastName,
+					user_email: founder.email,
+				});
+			}
+		});
+
+		return {
+			inactiveFounders7Days,
+			inactiveFounders30Days,
+		};
 	} catch (error) {
-	  console.error("Error fetching inactive founders:", error);
-	  return {
-		status: 500,
-		message: "Error fetching inactive founders",
-	  };
+		console.error("Error fetching inactive founders:", error);
+		return {
+			status: 500,
+			message: "Error fetching inactive founders",
+		};
 	}
-  };
-  
-  export const sendMailtoInactiveFounders = async () => {
+};
+
+export const sendMailtoInactiveFounders = async () => {
 	try {
-		const { inactiveFounders7Days, inactiveFounders30Days } = await getInactiveFounders();
+		const { inactiveFounders7Days, inactiveFounders30Days } =
+			await getInactiveFounders();
 
 		for (const founder of inactiveFounders7Days) {
-			console.log("sending mail to 7 day inactive user")
-			const emailContent = await ejs.renderFile(
-				'./public/7dayemail.ejs',
-				{ firstName: founder.user_first_name, lastName: founder.user_last_name, dashboardLink: 'https://thecapitalhub.in/home' }
-			);
-
-			// Send email using Nodemailer
-			await transporter.sendMail({
-				from: `"The Capital Hub" <${process.env.EMAIL_USER}>`, 
-				to: founder.user_email, 
-				subject: 'Inactive Reminder', 
-				html: emailContent, 
+			console.log("sending mail to 7 day inactive user");
+			const emailContent = await ejs.renderFile("./public/7dayemail.ejs", {
+				firstName: founder.user_first_name,
+				lastName: founder.user_last_name,
+				dashboardLink: "https://thecapitalhub.in/home",
 			});
-		}
-
-		for (const founder of inactiveFounders30Days) {
-			console.log("sending mail to 30 days inactive users")
-			const emailContent = await ejs.renderFile(
-				'./public/30dayemail.ejs',
-				{ firstName: founder.user_first_name, lastName: founder.user_last_name, dashboardLink: 'https://thecapitalhub.in/home' }
-			);
 
 			// Send email using Nodemailer
 			await transporter.sendMail({
 				from: `"The Capital Hub" <${process.env.EMAIL_USER}>`,
-				to: founder.user_email, 
-				subject: 'Re-engagement Reminder', 
-				html: emailContent, 
+				to: founder.user_email,
+				subject: "Inactive Reminder",
+				html: emailContent,
 			});
 		}
 
-		return "Emails sent"
+		for (const founder of inactiveFounders30Days) {
+			console.log("sending mail to 30 days inactive users");
+			const emailContent = await ejs.renderFile("./public/30dayemail.ejs", {
+				firstName: founder.user_first_name,
+				lastName: founder.user_last_name,
+				dashboardLink: "https://thecapitalhub.in/home",
+			});
+
+			// Send email using Nodemailer
+			await transporter.sendMail({
+				from: `"The Capital Hub" <${process.env.EMAIL_USER}>`,
+				to: founder.user_email,
+				subject: "Re-engagement Reminder",
+				html: emailContent,
+			});
+		}
+
+		return "Emails sent";
 	} catch (error) {
 		console.error("Error sending emails:", error);
-		return error
+		return error;
 	}
 };

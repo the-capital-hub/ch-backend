@@ -42,7 +42,7 @@ const userSchema = new Schema(
 			type: String,
 		},
 		linkedinTokenExpiryDate: {
-			type: Date
+			type: Date,
 		},
 		linkedin: { type: String },
 		userName: { type: String },
@@ -323,6 +323,15 @@ const userSchema = new Schema(
 		isAdmin: {
 			type: Boolean,
 			default: false,
+		},
+		isTopVoice: {
+			status: {
+				type: Boolean,
+				default: false,
+			},
+			expiry: {
+				type: Date,
+			},
 		},
 	},
 	{
