@@ -20,6 +20,9 @@ const fileSchema = new Schema(
     fileUrl: {
       type: String,
       required: true
+    },
+    videoUrl:{
+      type:String
     }
   },
   {

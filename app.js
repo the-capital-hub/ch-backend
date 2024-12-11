@@ -8,6 +8,8 @@ import connectDB from "./constants/db.js";
 import xlsx from "xlsx";
 import cron from "node-cron";
 import moment from "moment";
+import nodemailer from "nodemailer";
+import ejs from "ejs";
 //routes
 import usersData from "./routes/usersData.js";
 import postData from "./routes/postData.js";
@@ -32,6 +34,10 @@ import newsRouter from "./routes/newsRoutes.js";
 import meetingsRoutes from "./routes/meetingsRoutes.js";
 import ResourceRouter from "./routes/resourceRoute.js";
 import ThoughtsRoutes from "./routes/thoughtsRoutes.js";
+
+
+//inactive users mail function
+import { sendMailtoInactiveFounders } from "./services/userService.js";
 
 //model import for cron
 import { UserModel } from "./models/User.js";
@@ -110,13 +116,17 @@ const io = new Server(server, {
 // Cron job to remove expired LinkedIn tokens
 cron.schedule('0 0 * * *', async () => {  
 	try {
+	// setting up time of the moment, to validate the expiry time of linkedin token	
 	  const now = moment().toISOString(); 
-  
 	  const result = await UserModel.updateMany(
 		{ linkedinTokenExpiryDate: { $lt: now } },  // Find users with expired tokens
 		{ $unset: { linkedinId: "", linkedinTokenExpiryDate: "" } }  // Remove the fields from the document
 	  );
 	  console.log(`Expired tokens removed from ${result.modifiedCount} users.`);
+
+	  //sending mails to every inactive user, for 7 and 30 days
+	  await sendMailtoInactiveFounders();
+
 	} catch (error) {
 	  console.error("Error removing expired tokens:", error);
 	}
