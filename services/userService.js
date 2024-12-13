@@ -6,6 +6,7 @@ import { EventModel } from "../models/Event.js";
 import { ThoughtModel } from "../models/Thoughts.js";
 import { BookingModel } from "../models/Bookings.js";
 import { UserAnalyticsModel } from "../models/UserAnalytics.js";
+import { AvailabilityModel } from "../models/Availability.js";
 import { ConnectionModel } from "../models/Connection.js";
 //import { comparePassword } from "../utils/passwordManager.js";
 import { StartUpModel } from "../models/startUp.js";
@@ -1690,5 +1691,32 @@ export const sendMailtoInactiveFounders = async () => {
 	} catch (error) {
 		console.error("Error sending emails:", error);
 		return error;
+	}
+};
+
+export const getUserAvaibility = async (userId) => {
+	try {
+		const user = await UserModel.findById(userId);
+		if (!user) {
+			return {
+				status: 404,
+				message: "User not found",
+			};
+		}
+		const availability = await AvailabilityModel.findOne({
+			userId: user._id,
+		}).populate("userId");
+		// console.log("availability", availability);
+		return {
+			status: 200,
+			message: "User availability fetched successfully",
+			availability,
+		};
+	} catch (error) {
+		console.error("Error getting user availability:", error);
+		return {
+			status: 500,
+			message: "Error getting user availability",
+		};
 	}
 };
