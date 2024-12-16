@@ -9,5 +9,18 @@ export const getVc = async(vcId) =>{
         return vc;
     }catch(error){
         return error;
-    }
+   }
 }
+
+    export const addVc = async (vcData) => {
+        try{
+            const newVc = new VCModel(vcData);
+            await newVc.save();
+            return newVc;
+        }
+        catch(error){
+            console.log(error);
+            return error;
+        }
+
+    }
