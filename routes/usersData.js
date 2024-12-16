@@ -44,6 +44,7 @@ import {
 	getUserMilestonesController,
 	updateTopVoiceController,
 	getInactiveFounderController,
+	getUserAvaibilityController,
 } from "../controllers/userData.js";
 
 import { authenticateToken } from "../middlewares/authenticateToken.js";
@@ -138,5 +139,8 @@ router.patch("/updateTopVoice", updateTopVoiceController);
 //getInactive founders
 
 router.get("/inactive-founders", getInactiveFounderController);
+
+// get user availability
+router.get("/getUserAvailability", getUserAvaibilityController);
 
 export default router;
