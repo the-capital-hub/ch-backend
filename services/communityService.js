@@ -39,7 +39,7 @@ export const getCommunityById = async (communityId) => {
 
     if (!community) {
       return {
-        status: 404,
+        status: 202,
         message: 'Community not found',
       };
     }

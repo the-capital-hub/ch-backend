@@ -284,7 +284,7 @@ export const getLastMessage = async (chatId) => {
     const lastMessage = await MessageModel.findOne({ chatId }).sort({ createdAt: -1 }).populate('senderId');
     if (!lastMessage) {
       return {
-        status: 404,
+        status: 200,
         message: "No messages found in the chat",
       };
     }
