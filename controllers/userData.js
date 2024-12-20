@@ -1305,39 +1305,4 @@ export const getUserAvaibilityController = async (req, res) => {
 };
 
 
-// New function to send report email
-export const sendReportEmail = async (req, res) => {
-	try {
-		const { postPublicLink, postId, reportReason, reporterEmail, reporterId, reportTime, email } = req.body;
 
-		// Validate required fields
-		if (!postPublicLink || !postId || !reportReason || !reporterEmail || !reporterId || !reportTime) {
-			return res.status(400).send("All fields are required.");
-		}
-
-		// Prepare email content
-		const emailContent = await ejs.renderFile("./public/reportmail.ejs",{
-			postPublicLink,
-			postId,
-			reportReason,
-			reporterEmail,
-			reporterId,
-			reportTime,
-		});
-
-		// Send email using the nodemailer function
-	const response = await transporter.sendMail({
-		from: `"The Capital Hub" <${process.env.EMAIL_USER}>`,
-		to: email,
-		subject: "Post Reported on The Capital Hub",
-		html: emailContent,
-	})
-
-		
-	return res.status(200).send("Report email sent successfully.");
-	
-	} catch (error) {
-		console.error("Error sending report email:", error);
-		return res.status(500).send("An error occurred while sending the report email.");
-	}
-};
