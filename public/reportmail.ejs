@@ -1,0 +1,57 @@
+<!-- Report Email Template -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Report Notification</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      background-color: #f4f4f4;
+      color: #333;
+      padding: 20px;
+    }
+    .container {
+      background-color: #ffffff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    h2 {
+      color: #333;
+    }
+    p {
+      font-size: 16px;
+      color: #666;
+    }
+    a {
+      color: #fff;
+      text-decoration: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <img src="https://thecapitalhub.in/static/media/logo-white.c4e4dacf1f6283c93e11.png" alt="Company Logo" style="max-width: 400px; margin-bottom: 20px;">
+    <h2>Report Notification</h2>
+    <p>Dear Team,</p>
+    <p>A report has been submitted regarding a post. Here are the details:</p>
+    
+    <p><strong>Post Public Link:</strong> <a href="<%= postPublicLink %>"><%= postPublicLink %></a></p>
+    <p><strong>Post ID:</strong> <%= postId %></p>
+    <p><strong>Report Reason:</strong> <%= reportReason %></p>
+    <p><strong>Reporter Email:</strong> <%= reporterEmail %></p>
+    <p><strong>Reporter ID:</strong> <%= reporterId %></p>
+    <p><strong>Time of Report:</strong> <%= reportTime %></p>
+
+    <p>Thank you for your attention to this matter.</p>
+
+    <p>Best regards,</p>
+    <p>The CapitalHub Team</p>
+  </div>
+</body>
+</html>

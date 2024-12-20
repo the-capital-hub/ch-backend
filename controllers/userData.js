@@ -1,4 +1,6 @@
 import jwt from "jsonwebtoken";
+import nodemailer from "nodemailer"
+import ejs from 'ejs';
 import {
 	registerUserService,
 	getUsersService,
@@ -51,6 +53,16 @@ import { UserAnalyticsModel } from "../models/UserAnalytics.js";
 import { get } from "mongoose";
 import fetch from "node-fetch";
 import moment from "moment";
+
+//transporter for nodemailer
+const transporter = nodemailer.createTransport({
+	service: "gmail",
+	secure: false,
+	auth: {
+		user: process.env.EMAIL_USER,
+		pass: process.env.EMAIL_PASS,
+	},
+});
 
 export const createUser = async (req, res) => {
 	try {
@@ -1289,5 +1301,43 @@ export const getUserAvaibilityController = async (req, res) => {
 			status: 500,
 			message: "An error occurred while getting user milestones.",
 		});
+	}
+};
+
+
+// New function to send report email
+export const sendReportEmail = async (req, res) => {
+	try {
+		const { postPublicLink, postId, reportReason, reporterEmail, reporterId, reportTime, email } = req.body;
+
+		// Validate required fields
+		if (!postPublicLink || !postId || !reportReason || !reporterEmail || !reporterId || !reportTime) {
+			return res.status(400).send("All fields are required.");
+		}
+
+		// Prepare email content
+		const emailContent = await ejs.renderFile("./public/reportmail.ejs",{
+			postPublicLink,
+			postId,
+			reportReason,
+			reporterEmail,
+			reporterId,
+			reportTime,
+		});
+
+		// Send email using the nodemailer function
+	const response = await transporter.sendMail({
+		from: `"The Capital Hub" <${process.env.EMAIL_USER}>`,
+		to: email,
+		subject: "Post Reported on The Capital Hub",
+		html: emailContent,
+	})
+
+		
+	return res.status(200).send("Report email sent successfully.");
+	
+	} catch (error) {
+		console.error("Error sending report email:", error);
+		return res.status(500).send("An error occurred while sending the report email.");
 	}
 };
