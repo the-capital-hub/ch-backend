@@ -34,6 +34,7 @@ import newsRouter from "./routes/newsRoutes.js";
 import meetingsRoutes from "./routes/meetingsRoutes.js";
 import ResourceRouter from "./routes/resourceRoute.js";
 import ThoughtsRoutes from "./routes/thoughtsRoutes.js";
+import newCommunityRoutes from "./routes/NewCommunityRoutes.js"
 
 
 //inactive users mail function
@@ -77,6 +78,7 @@ app.use("/news", newsRouter);
 app.use("/meetings", meetingsRoutes);
 app.use("/resources", ResourceRouter);
 app.use("/thoughts", ThoughtsRoutes);
+app.use("/Communities", newCommunityRoutes)
 // documentation upload
 
 const storage = multer.diskStorage({
