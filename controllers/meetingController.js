@@ -8,6 +8,7 @@ import {
 	cancelSheduledMeeting,
 	getAllSheduledMeeting,
 	getEventsByUsername,
+	getEventsByOnelink,
 	createPaymentSession,
 	verifyPayment,
 } from "../services/meetingService.js";
@@ -167,6 +168,19 @@ export const getEventsByUsernameController = async (req, res) => {
 		res.status(500).send({
 			status: 500,
 			message: "An error occurred while getting events by username.",
+		});
+	}
+};
+
+export const getEventsByOnelinkController = async (req, res) => {
+	try {
+		const { onelinkId } = req.params;
+		const response = await getEventsByOnelink(onelinkId);
+		res.status(response.status).send(response);
+	} catch (error) {
+		res.status(500).send({
+			status: 500,
+			message: "An error occurred while getting events by onelink.",
 		});
 	}
 };
