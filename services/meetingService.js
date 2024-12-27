@@ -11,7 +11,7 @@ import { v4 as uuidv4 } from "uuid";
 
 Cashfree.XClientId = process.env.CASHFREE_CLIENT_ID;
 Cashfree.XClientSecret = process.env.CASHFREE_SECRET_KEY;
-Cashfree.XEnvironment = Cashfree.Environment.PRODUCTION; 
+Cashfree.XEnvironment = Cashfree.Environment.PRODUCTION;
 
 const { OAuth2 } = google.auth;
 const oAuth2Client = new OAuth2(
@@ -81,7 +81,7 @@ export const createEvent = async (userId, data) => {
 			title: data.title,
 			description: data.description,
 			duration: data.duration,
-			isPrivate: data.isPrivate,
+			eventType: data.eventType,
 			price: data.price,
 			discount: data.discount,
 		});
@@ -718,6 +718,34 @@ export const getEventsByUsername = async (username) => {
 		return {
 			status: 500,
 			message: "An error occurred while getting events by username.",
+		};
+	}
+};
+
+export const getEventsByOnelink = async (onelinkId) => {
+	try {
+		const user = await UserModel.findOne({ oneLinkId: onelinkId });
+		if (!user) {
+			return {
+				status: 404,
+				message: "User  not found",
+			};
+		}
+		// console.log("userId", user._id);
+		const response = (await EventModel.find({ userId: user._id })).filter(
+			(event) => event.eventType === "Pitch Day"
+		);
+		// console.log("Pitch Day Events", response);
+		return {
+			status: 200,
+			message: "Events retrieved successfully",
+			data: response,
+		};
+	} catch (error) {
+		console.error("Error getting events by onelink:", error);
+		return {
+			status: 500,
+			message: "An error occurred while getting events by onelink.",
 		};
 	}
 };

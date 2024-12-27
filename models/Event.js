@@ -14,9 +14,10 @@ const eventSchema = new mongoose.Schema(
 			type: Number,
 			required: true,
 		},
-		isPrivate: {
-			type: Boolean,
-			default: false,
+		eventType: {
+			type: String,
+			enum: ["Public", "Private", "Pitch Day"],
+			default: "Public",
 		},
 		userId: {
 			type: mongoose.Schema.Types.ObjectId,

@@ -12,6 +12,7 @@ import {
 	cancelSheduledMeetingController,
 	getALLScheduledMeetings,
 	getEventsByUsernameController,
+	getEventsByOnelinkController,
 	createPaymentSessionController,
 	paymentVerifyController,
 } from "../controllers/meetingController.js";
@@ -19,6 +20,7 @@ import {
 const router = express.Router();
 // http://localhost:8080/meetings/
 router.get("/getEvents/:username", getEventsByUsernameController);
+router.get("/getEventsByOnelinkId/:onelinkId", getEventsByOnelinkController);
 router.post("/scheduleMeeting", scheduleMeetingController);
 router.post("/createPaymentSession", createPaymentSessionController);
 router.post("/verifyPayment", paymentVerifyController);
