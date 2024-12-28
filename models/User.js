@@ -333,6 +333,12 @@ const userSchema = new Schema(
 				type: Date,
 			},
 		},
+		webinars: [
+			{
+				type: Schema.Types.ObjectId,
+				ref: "Webinars",
+			},
+		],
 	},
 	{
 		timestamps: true,
