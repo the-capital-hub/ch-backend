@@ -45,6 +45,7 @@ import {
 	updateTopVoiceController,
 	getInactiveFounderController,
 	getUserAvaibilityController,
+	sendReportEmail
 } from "../controllers/userData.js";
 
 import { authenticateToken } from "../middlewares/authenticateToken.js";
@@ -142,5 +143,8 @@ router.get("/inactive-founders", getInactiveFounderController);
 
 // get user availability
 router.get("/getUserAvailability", getUserAvaibilityController);
+
+//send report email
+router.post("/report", sendReportEmail);
 
 export default router;

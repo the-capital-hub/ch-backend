@@ -158,7 +158,7 @@ export const getLastMessageController = async (req, res) => {
     const response = await getLastMessage(chatId);
     return res.status(response.status).send(response);
   } catch (error) {
-    console.error(error);
+    console.error("error", error);
     return res.status(500).send({
       status: 500,
       message: "An error occurred while getting the last message.",

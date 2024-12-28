@@ -134,9 +134,6 @@ export const getPendingConnectionRequests = async (userId) => {
 				"firstName lastName profilePicture designation startUp investor oneLinkId"
 			)
 			.sort({ _id: "-1" });
-		for (const request of pendingRequests) {
-			await request.sender.populate("startUp investor");
-		}
 		return {
 			status: 200,
 			message: "Pending requests retrived successfully",

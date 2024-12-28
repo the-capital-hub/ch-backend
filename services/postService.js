@@ -1073,50 +1073,61 @@ export const sharePostOnLinkedin = async (
 };
 
 export const voteForPoll = async (postId, optionId, userId) => {
-	try {
-		const post = await PostModel.findById(postId);
+    try {
+        const post = await PostModel.findById(postId);
 
-		if (!post) {
-			return {
-				status: 404,
-				message: "Post Not Found",
-			};
-		}
+        if (!post) {
+            return {
+                status: 404,
+                message: "Post Not Found",
+            };
+        }
 
-		const option = post.pollOptions.id(optionId);
+        const option = post.pollOptions.id(optionId);
 
-		if (!option) {
-			return {
-				status: 404,
-				message: "Option Not Found",
-			};
-		}
+        if (!option) {
+            return {
+                status: 404,
+                message: "Option Not Found",
+            };
+        }
 
-		// Check if user has already voted
-		const voteIndex = option.votes.indexOf(userId);
-		const hasVoted = voteIndex !== -1;
+        // Check if user has already voted
+        const voteIndex = option.votes.indexOf(userId);
+        const hasVoted = voteIndex !== -1;
 
-		if (hasVoted) {
-			// Remove vote
-			option.votes.splice(voteIndex, 1);
-		} else {
-			// Add vote
-			option.votes.push(userId);
-		}
+        // If the post doesn't allow multiple answers, we need to check if the user has voted on any option
+        if (!post.allow_multiple_answers && !hasVoted) {
+            // Check if the user has already voted on another option
+            const hasVotedOnOtherOptions = post.pollOptions.some((pollOption) => pollOption.votes.includes(userId));
 
-		// Save the updated post
-		await post.save();
+            if (hasVotedOnOtherOptions) {
+                return {
+                    status: 400,
+                    message: "You can only vote for one option.",
+                };
+            }
+        }
 
-		// Return only the poll options array
-		return {
-			status: 200,
-			message: hasVoted
-				? "Vote removed successfully"
-				: "Vote added successfully",
-			data: post.pollOptions.toObject(), // Convert to plain object
-		};
-	} catch (error) {
-		console.error("Error voting for poll:", error);
-		throw error;
-	}
+        // Toggle the vote for the selected option
+        if (hasVoted) {
+            // Remove vote if the user already voted
+            option.votes.splice(voteIndex, 1);
+        } else {
+            // Add vote if the user hasn't voted
+            option.votes.push(userId);
+        }
+
+        // Save the updated post
+        await post.save();
+
+        return {
+            status: 200,
+            message: hasVoted ? "Vote removed successfully" : "Vote added successfully",
+            data: post.pollOptions.toObject(), // Convert to plain object
+        };
+    } catch (error) {
+        console.error("Error voting for poll:", error);
+        throw error;
+    }
 };

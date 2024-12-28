@@ -67,6 +67,10 @@ const postSchema = new Schema(
       type:String
     },
     pollOptions: [pollOptionsSchema],
+    allow_multiple_answers: {
+      type: Boolean,
+      default: true
+    }
   },
   {
     timestamps: true,
