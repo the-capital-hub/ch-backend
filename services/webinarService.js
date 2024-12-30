@@ -3,6 +3,19 @@ import { UserModel } from "../models/User.js";
 import { google } from "googleapis";
 import { parse, isAfter, addMinutes } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
+import nodemailer from "nodemailer";
+import {
+	getSuccessEmailTemplate,
+	getFailureEmailTemplate,
+} from "../utils/mailHelper.js";
+// imports for payment
+import crypto from "crypto";
+import { Cashfree } from "cashfree-pg";
+import { v4 as uuidv4 } from "uuid";
+
+Cashfree.XClientId = process.env.CASHFREE_CLIENT_ID;
+Cashfree.XClientSecret = process.env.CASHFREE_SECRET_KEY;
+Cashfree.XEnvironment = Cashfree.Environment.SANDBOX;
 
 const { OAuth2 } = google.auth;
 const oAuth2Client = new OAuth2(
@@ -145,11 +158,11 @@ export const getWebinarsByOnelink = async (onelinkId) => {
 				message: "User  not found",
 			};
 		}
-		console.log("userId in getWebinarsByOnelink", user._id);
+		// console.log("userId in getWebinarsByOnelink", user._id);
 		const webinars = (await WebinarModel.find({ userId: user._id })).filter(
 			(webinar) => webinar.webinarType === "Pitch Day"
 		);
-		console.log("Pitch Day Webinars", webinars);
+		// console.log("Pitch Day Webinars", webinars);
 		return {
 			status: 200,
 			message: "Webinars fetched successfully",
@@ -242,6 +255,200 @@ export const deleteWebinar = async (userId, webinarId) => {
 			status: 200,
 			message: "Webinar deleted successfully",
 			data: webinarResponse,
+		};
+	} catch (error) {
+		throw new Error(error.message);
+	}
+};
+
+// function to generate Random oredrId
+async function generateOrderId() {
+	try {
+		const uniqueId = crypto.randomBytes(16).toString("hex");
+		const hash = crypto.createHash("sha256");
+		hash.update(uniqueId);
+		return hash.digest("hex").substr(0, 12);
+	} catch (error) {
+		console.error("Error generating order ID:", error);
+		throw new Error("Failed to generate order ID");
+	}
+}
+
+export const createPaymentSession = async (data) => {
+	try {
+		// Generate order ID
+		const orderId = await generateOrderId();
+		console.log("orderId", orderId);
+		// Generate a random customer ID
+		const customerId = uuidv4();
+
+		// Prepare request payload
+		const request = {
+			order_amount: parseFloat(data.amount).toFixed(2),
+			order_currency: "INR",
+			order_id: orderId,
+			customer_details: {
+				customer_id: customerId,
+				customer_name: data.name.trim(),
+				customer_email: data.email.toLowerCase().trim(),
+				customer_phone: data.mobile.trim(),
+			},
+			order_expiry_time: new Date(Date.now() + 30 * 60 * 1000).toISOString(), // 30 minutes expiry
+		};
+
+		// Create order with Cashfree
+		const response = await Cashfree.PGCreateOrder("2023-08-01", request);
+
+		// Validate response
+		if (!response?.data?.payment_session_id) {
+			throw new Error("Invalid response from payment gateway");
+		}
+
+		return {
+			status: 200,
+			// orderId: orderId,
+			data: response.data,
+		};
+	} catch (error) {
+		console.error("Error in creating payment session:", error);
+		throw new Error(error.message);
+	}
+};
+
+// Email configuration
+const transporter = nodemailer.createTransport({
+	host: "smtp.gmail.com",
+	port: 587,
+	secure: false, // true for 465, false for other ports
+	auth: {
+		user: process.env.EMAIL_USER,
+		pass: process.env.EMAIL_APP_PASSWORD,
+	},
+	tls: {
+		rejectUnauthorized: false, // Only use during development
+	},
+});
+
+// Verify transporter configuration
+const verifyTransporter = async () => {
+	try {
+		await transporter.verify();
+		console.log("SMTP connection verified successfully");
+		return true;
+	} catch (error) {
+		console.error("SMTP verification failed:", error);
+		return false;
+	}
+};
+
+// Updated email sending function with error handling
+const sendEmail = async (emailOptions) => {
+	try {
+		// Verify connection before sending
+		const isVerified = await verifyTransporter();
+		if (!isVerified) {
+			throw new Error("SMTP connection failed");
+		}
+
+		const info = await transporter.sendMail(emailOptions);
+		console.log("Email sent successfully:", info.messageId);
+		return true;
+	} catch (error) {
+		console.error("Error sending email:", error);
+		throw new Error(`Failed to send email: ${error.message}`);
+	}
+};
+
+export const verifyPayment = async (req, res) => {
+	try {
+		// console.log("req.body", req.body);
+		const { orderId, webinarId, name, email, mobile } = req.body;
+		// Fetch payment details
+		const response = await Cashfree.PGOrderFetchPayments("2023-08-01", orderId);
+		console.log("response", response.data[0]);
+
+		// Validate response
+		if (!response?.data) {
+			throw new Error("Invalid response from payment gateway");
+		}
+
+		// Extract payment status
+		const paymentStatus = response.data[0].payment_status;
+
+		// Define valid payment statuses
+		// convert all to Capital
+		const validPaymentStatuses = [
+			"SUCCESS",
+			"FAILED",
+			"PENDING",
+			"USER_DROPPED",
+			"NOT_ATTEMPTED",
+		];
+
+		// Check if payment status is valid
+		// if (!validPaymentStatuses.includes(paymentStatus)) {
+		// 	throw new Error("Invalid payment status");
+		// }
+
+		// Update payment status in database
+		const payment = await WebinarModel.findOneAndUpdate(
+			{ _id: webinarId },
+			{
+				$push: {
+					joinedUsers: {
+						name: name,
+						email: email,
+						mobile: mobile,
+						orderId: orderId,
+						paymentId: response.data[0].cf_payment_id,
+						paymentAmount: response.data[0].order_amount,
+						paymentStatus,
+						paymentTime: response.data[0].payment_completion_time,
+					},
+				},
+			},
+			{ new: true } // This ensures the updated document is returned
+		).exec();
+
+		const webinar = await WebinarModel.findById(webinarId);
+
+		const emailOptions = {
+			from: {
+				name: "The CapitalHub Team",
+				address: process.env.EMAIL_USER,
+			},
+			to: email,
+			subject:
+				paymentStatus === "SUCCESS"
+					? `🎉 Successfully Registered: ${webinar.title}`
+					: `⚠️ Payment ${paymentStatus}: ${webinar.title}`,
+			html:
+				paymentStatus === "SUCCESS"
+					? getSuccessEmailTemplate(
+							name,
+							webinar.title,
+							webinar.date,
+							webinar.startTime,
+							webinar.link
+					  )
+					: getFailureEmailTemplate(name, webinar.title, paymentStatus),
+		};
+
+		await sendEmail(emailOptions);
+
+		return {
+			status: 200,
+			data: {
+				orderId,
+				paymentId: response.data[0].cf_payment_id,
+				amount: response.data[0].payment_amount,
+				currency: response.data[0].payment_currency,
+				status: paymentStatus,
+				isPaymentSuccessful: validPaymentStatuses.includes(paymentStatus),
+				paymentMethod: response.data[0].payment_group,
+				paymentTime: response.data[0].payment_completion_time,
+				NotificationEmailSent: true,
+			},
 		};
 	} catch (error) {
 		throw new Error(error.message);

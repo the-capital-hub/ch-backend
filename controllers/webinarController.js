@@ -3,6 +3,8 @@ import {
 	getWebinar,
 	getWebinarsByOnelink,
 	deleteWebinar,
+	createPaymentSession,
+	verifyPayment,
 } from "../services/webinarService.js";
 
 export const createWebinarController = async (req, res) => {
@@ -58,6 +60,32 @@ export const deleteWebinarController = async (req, res) => {
 		res.status(500).send({
 			status: 500,
 			message: "An error occurred while deleting webinar.",
+		});
+	}
+};
+
+export const createPaymentSessionController = async (req, res) => {
+	try {
+		const response = await createPaymentSession(req.body);
+		res.status(response.status).send(response);
+	} catch (error) {
+		console.error(error);
+		res.status(500).send({
+			status: 500,
+			message: "An error occurred while intiating payment.",
+		});
+	}
+};
+
+export const paymentVerifyController = async (req, res) => {
+	try {
+		const response = await verifyPayment(req, res);
+		res.status(response.status).send(response);
+	} catch (error) {
+		console.error(error);
+		res.status(500).send({
+			status: 500,
+			message: "An error occurred while verifying payment.",
 		});
 	}
 };

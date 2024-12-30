@@ -64,21 +64,41 @@ const webinarSchema = new mongoose.Schema(
 		// Make it an array of objects, set when the user joins the webinar
 		joinedUsers: [
 			{
-				userId: {
-					type: mongoose.Schema.Types.ObjectId,
-					ref: "Users",
-				},
-				paymentStatus: {
+				name: {
 					type: String,
-					enum: ["Paid", "Failed", "Not Required", "Cancelled"],
-					default: "Not Required",
+					required: true,
+				},
+				email: {
+					type: String,
+					required: true,
+				},
+				mobile: {
+					type: String,
+					required: true,
+				},
+				orderId: {
+					type: String,
+					required: true,
+					default: null,
 				},
 				paymentId: {
 					type: String,
+					required: true,
+					default: null,
+				},
+				paymentStatus: {
+					type: String,
+					required: true,
+					// enum: ["SUCCESS", "FAILED", "PENDING", "USER_DROPPED"],
+				},
+				paymentTime: {
+					type: Date,
+					required: true,
 					default: null,
 				},
 				paymentAmount: {
 					type: Number,
+					required: true,
 					default: 0,
 				},
 			},
