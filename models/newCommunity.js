@@ -7,6 +7,7 @@ const CommunitySchema = new Schema({
   name: {
     type: String,
     required: true,
+    unique: true
   },
   size: {
     type:String
@@ -41,6 +42,12 @@ const CommunitySchema = new Schema({
     {
       type: Schema.Types.ObjectId,
       ref: "Users",
+    },
+  ],
+  posts: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: "Posts",
     },
   ],
 

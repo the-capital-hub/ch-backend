@@ -5,6 +5,11 @@ import community_schema from "../models/newCommunity.js";
 
 export const createCommunity = async (communitydata) => {
   try {
+
+    const user = await UserModel.findById(communitydata.adminId);
+    const isSubscribed = (user.isSubscribed);
+
+if(isSubscribed){
     if (communitydata.image) {
       const { secure_url } = await cloudinary.uploader.upload(communitydata.image, {
         folder: `${process.env.CLOUDIANRY_FOLDER}/posts/images`,
@@ -22,6 +27,15 @@ export const createCommunity = async (communitydata) => {
       message: "New Community Created",
       data: newCommunity,
     }
+  }
+  else {
+    return {
+      status: 400,
+      message: "Subscription Required",
+      data: null,
+  }
+}
+
   } catch (error) {
     console.log(error);
     return {
@@ -49,6 +63,29 @@ export const getCommunityById = async (communityId) => {
     };
   } catch (error) {
     console.error(error);
+    return {
+      status: 500,
+      message: 'An error occurred while retrieving the community.',
+    };
+  }
+};
+
+export const getCommunityByname = async (communityName) => {
+  try {
+    const community = await community_schema.findOne({ name: communityName });
+    if (community.length === 0) {
+      return {
+        status: 202,
+        message: 'Community not found',
+      };
+    }
+
+    return {
+      status: 200,
+      message: 'Community retrieved successfully',
+      data: community,
+    };
+  } catch (error) {
     return {
       status: 500,
       message: 'An error occurred while retrieving the community.',
@@ -90,21 +127,27 @@ export const updateCommunity = async (communityId, updatedData) => {
         message: 'Community not found',
       };
     }
-    if (updatedData.profileImage) {
-      const { secure_url } = await cloudinary.uploader.upload(updatedData.profileImage, {
+    if (updatedData.image) {
+      const { secure_url } = await cloudinary.uploader.upload(updatedData.image, {
         folder: `${process.env.CLOUDIANRY_FOLDER}/posts/images`,
         format: 'webp',
         unique_filename: true,
       });
-      community.profileImage = secure_url;
+      community.image = secure_url;
     }
 
-    community.communityName = updatedData.communityName || community.communityName;
-    community.description = updatedData.description || community.description;
-    community.about = updatedData.about || community.about;
+    community.name = updatedData.name || community.name;
+    community.size = updatedData.size || community.size;
+    community.subscription = updatedData.subscription || community.subscription;
     community.members = updatedData.members || community.members;
+    community.amount = updatedData.amount || community.amount;
+    community.isOpen = updatedData.isOpen || community.isOpen;
+    community.about = updatedData.about || community.about;
+
+
 
     await community.save();
+    console.log(community);
 
     return {
       status: 200,

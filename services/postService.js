@@ -2,7 +2,7 @@ import { PostModel } from "../models/Post.js";
 import { UserModel } from "../models/User.js";
 import { cloudinary } from "../utils/uploadImage.js";
 import { addNotification, deleteNotification } from "./notificationService.js";
-
+import fetch from "node-fetch";
 export const createNewPost = async (data) => {
 	try {
 		if (data?.image) {

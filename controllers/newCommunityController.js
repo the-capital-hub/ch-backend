@@ -7,6 +7,7 @@ import {
   getUnAddedMembers,
   addMembersToCommunity,
   deleteCommunity,
+  getCommunityByname,
 } from "../services/NewCommunityService.js";
 
 export const createCommunityController = async (req, res) => {
@@ -36,9 +37,24 @@ export const getCommunityByIdController = async (req, res) => {
   }
 };
 
+export const getCommunityByNameController = async (req, res) => {
+  try {
+    const { communityName } = req.params;
+    const response = await getCommunityByname(communityName);
+    return res.status(response.status).send(response);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).send({
+      status: 500,
+      message: "An error occurred while getting community.",
+    });
+  }
+};
+
+
 export const getAllCommunitiesByUserIdController = async (req, res) => {
   try {
-    const { userId } = req.params;
+    const userId = req.userId;
     const response = await getAllCommunitiesByUserId(userId);
     return res.status(response.status).send(response);
   } catch (error) {
