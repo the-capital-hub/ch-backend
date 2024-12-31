@@ -100,4 +100,101 @@ const getFailureEmailTemplate = (userName, webinarTitle, paymentStatus) => {
   `;
 };
 
-export { getSuccessEmailTemplate, getFailureEmailTemplate };
+// User Registration Success Email Template
+const getUserRegistrationTemplate = (
+	name,
+	email,
+	mobile,
+	userName,
+	password
+) => {
+	return `
+  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <h2 style="color: #28a745;">Registration Successful! 🎉</h2>
+      <p>Dear ${name},</p>
+      
+      <p>Welcome to CapitalHub! Your account has been successfully created.</p>
+      
+      <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
+          <h3 style="color: #333;">Your Account Details:</h3>
+          <p><strong>Username:</strong> ${userName}</p>
+          <p><strong>Email:</strong> ${email}</p>
+          <p><strong>Mobile:</strong> ${mobile}</p>
+          <p><strong>Password:</strong> ${password}</p>
+      </div>
+
+      <div style="background-color: #e8f5e9; padding: 15px; border-radius: 5px; margin: 20px 0;">
+          <h3 style="color: #2e7d32;">Getting Started:</h3>
+          <p>You can now log in to your account using your username and password.</p>
+          <p style="font-size: 0.9em; color: #666;">We recommend changing your password after your first login.</p>
+      </div>
+
+      <p>Best regards,<br>The CapitalHub Team</p>
+  </div>
+  `;
+};
+
+// Priority DM Success Email Template for User
+const getPriorityDMSuccessTemplate = (name, email, mobile, amountPaid) => {
+	return `
+  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <h2 style="color: #28a745;">Priority DM Sent Successfully! 🎉</h2>
+      <p>Dear ${name},</p>
+      
+      <p>Your priority DM has been successfully sent and payment has been processed.</p>
+      
+      <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
+          <h3 style="color: #333;">Transaction Details:</h3>
+          <p><strong>Amount Paid:</strong> ${amountPaid}</p>
+          <p><strong>Email:</strong> ${email}</p>
+          <p><strong>Mobile:</strong> ${mobile}</p>
+      </div>
+
+      <div style="background-color: #e8f5e9; padding: 15px; border-radius: 5px; margin: 20px 0;">
+          <h3 style="color: #2e7d32;">What's Next?</h3>
+          <p>The founder will be notified of your message and will respond as soon as possible.</p>
+          <p style="font-size: 0.9em; color: #666;">You'll receive a notification when they respond to your message.</p>
+      </div>
+
+      <p>Best regards,<br>The CapitalHub Team</p>
+  </div>
+  `;
+};
+
+// New Priority DM Notification Email Template for Founder
+const getFounderPriorityDMTemplate = (userName, userEmail, message) => {
+	return `
+  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <h2 style="color: #28a745;">New Priority DM Received! 📫</h2>
+      <p>Hello,</p>
+      
+      <p>You have received a new priority DM from a user on CapitalHub.</p>
+      
+      <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
+          <h3 style="color: #333;">Message Details:</h3>
+          <p><strong>From:</strong> ${userName}</p>
+          <p><strong>Email:</strong> ${userEmail}</p>
+          <p><strong>Message Preview:</strong> ${message.substring(
+						0,
+						100
+					)}...</p>
+      </div>
+
+      <div style="background-color: #e8f5e9; padding: 15px; border-radius: 5px; margin: 20px 0;">
+          <h3 style="color: #2e7d32;">Action Required:</h3>
+          <p><a href="#" style="color: #2e7d32; text-decoration: underline;">Click here to view and respond to the message</a></p>
+          <p style="font-size: 0.9em; color: #666;">This is a priority message. Please respond as soon as possible.</p>
+      </div>
+
+      <p>Best regards,<br>The CapitalHub Team</p>
+  </div>
+  `;
+};
+
+export {
+	getSuccessEmailTemplate,
+	getFailureEmailTemplate,
+	getUserRegistrationTemplate,
+	getPriorityDMSuccessTemplate,
+	getFounderPriorityDMTemplate,
+};

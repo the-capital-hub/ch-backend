@@ -339,6 +339,10 @@ const userSchema = new Schema(
 				ref: "Webinars",
 			},
 		],
+		priorityDMPrice: {
+			type: Number,
+			default: 99,
+		},
 	},
 	{
 		timestamps: true,

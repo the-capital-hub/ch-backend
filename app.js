@@ -34,8 +34,9 @@ import newsRouter from "./routes/newsRoutes.js";
 import meetingsRoutes from "./routes/meetingsRoutes.js";
 import ResourceRouter from "./routes/resourceRoute.js";
 import ThoughtsRoutes from "./routes/thoughtsRoutes.js";
-import newCommunityRoutes from "./routes/NewCommunityRoutes.js"
+import newCommunityRoutes from "./routes/NewCommunityRoutes.js";
 import WebinarsRoutes from "./routes/webinarsRoutes.js";
+import priorityDMRoutes from "./routes/priorityDMRoutes.js";
 
 //inactive users mail function
 import { sendMailtoInactiveFounders } from "./services/userService.js";
@@ -78,8 +79,9 @@ app.use("/news", newsRouter);
 app.use("/meetings", meetingsRoutes);
 app.use("/resources", ResourceRouter);
 app.use("/thoughts", ThoughtsRoutes);
-app.use("/Communities", newCommunityRoutes)
+app.use("/Communities", newCommunityRoutes);
 app.use("/webinars", WebinarsRoutes);
+app.use("/priorityDM", priorityDMRoutes);
 // documentation upload
 
 const storage = multer.diskStorage({

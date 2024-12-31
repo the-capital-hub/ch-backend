@@ -36,6 +36,7 @@ import {
 	blockUserController,
 	getUserByIdBodyController,
 	getUsersByUserNameController,
+	getUserByUsernameController,
 	unblockUserController,
 	getUserEmailByIdController,
 	getUserAnalyticsController,
@@ -45,7 +46,7 @@ import {
 	updateTopVoiceController,
 	getInactiveFounderController,
 	getUserAvaibilityController,
-	sendReportEmail
+	sendReportEmail,
 } from "../controllers/userData.js";
 
 import { authenticateToken } from "../middlewares/authenticateToken.js";
@@ -93,6 +94,7 @@ router.get("/getUserAnalytics/:userId", getUserAnalyticsController);
 router.get("/getUserProfileViews/:userId", getUserProfileViewsController);
 
 router.post("/getUserByUserName", getUsersByUserNameController);
+router.get("/getUserByUsername/:username", getUserByUsernameController);
 // Authorized routes below
 router.use(authenticateToken);
 

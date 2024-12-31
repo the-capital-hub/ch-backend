@@ -147,6 +147,39 @@ export const getUserByUserName = async (username) => {
 	}
 };
 
+export const getUserByUsername = async (username) => {
+	try {
+		const user = await UserModel.findOne({ userName: username })
+			.populate("startUp")
+			.populate("investor")
+			.populate("connections")
+			.populate("featuredPosts")
+			.populate("achievements")
+			.populate("savedPosts.posts")
+			.populate("eventId")
+			.populate("Availability");
+
+		if (!user) {
+			return {
+				status: 404,
+				message: "No user exists",
+			};
+		}
+
+		return {
+			status: 200,
+			user: user,
+			message: "User found successfully",
+		};
+	} catch (error) {
+		console.error("An error occurred while finding the user", error);
+		return {
+			status: 500,
+			message: "An error occurred while finding the user",
+		};
+	}
+};
+
 export const loginUserService = async ({ phoneNumber, password }) => {
 	if (!phoneNumber) {
 		throw new Error("PhoneNumber, Email or Username is required");
@@ -743,198 +776,201 @@ export const addUserAsInvestor = async (userId, investorId) => {
 
 export const getExplore = async (filters) => {
 	try {
-	  const {
-		type,
-		sector,
-		gender,
-		city,
-		size,
-		yearsOfExperience,
-		previousExits,
-		diversityMetrics,
-		sectorPreference,
-		investmentSize,
-		investmentStage,
-		fundingRaised,
-		productStage,
-		stage,
-		age,
-		education,
-		searchQuery,
-		sector_focus,
-		stage_focus,
-		ticket_size,
-		page = 1,
-		limit = 10,
-	  } = filters;
-  
-	  // Convert pagination parameters to numbers
-	  const pageNum = parseInt(page, 10);
-	  const limitNum = parseInt(limit, 10);
-	  const skip = (pageNum - 1) * limitNum;
-  
-	  // For startups
-	  if (type === "startup") {
-		const query = {};
-		if (sector) query.sector = sector;
-		if (city) query.location = city;
-		if (size) query.noOfEmployees = { $gte: parseInt(size, 10) };
-		if (fundingRaised) query.fundingRaised = fundingRaised;
-		if (productStage) query.productStage = productStage;
-		if (stage) query.stage = stage;
-		if (age) query.age = age;
-		if (searchQuery) query.company = { $regex: new RegExp(`^${searchQuery}`, "i") };
-  
-		const startups = await StartUpModel.find(query)
-		  .populate("founderId")
-		  .limit(limitNum)
-		  .skip(skip)
-		  .lean();
-  
+		const {
+			type,
+			sector,
+			gender,
+			city,
+			size,
+			yearsOfExperience,
+			previousExits,
+			diversityMetrics,
+			sectorPreference,
+			investmentSize,
+			investmentStage,
+			fundingRaised,
+			productStage,
+			stage,
+			age,
+			education,
+			searchQuery,
+			sector_focus,
+			stage_focus,
+			ticket_size,
+			page = 1,
+			limit = 10,
+		} = filters;
+
+		// Convert pagination parameters to numbers
+		const pageNum = parseInt(page, 10);
+		const limitNum = parseInt(limit, 10);
+		const skip = (pageNum - 1) * limitNum;
+
+		// For startups
+		if (type === "startup") {
+			const query = {};
+			if (sector) query.sector = sector;
+			if (city) query.location = city;
+			if (size) query.noOfEmployees = { $gte: parseInt(size, 10) };
+			if (fundingRaised) query.fundingRaised = fundingRaised;
+			if (productStage) query.productStage = productStage;
+			if (stage) query.stage = stage;
+			if (age) query.age = age;
+			if (searchQuery)
+				query.company = { $regex: new RegExp(`^${searchQuery}`, "i") };
+
+			const startups = await StartUpModel.find(query)
+				.populate("founderId")
+				.limit(limitNum)
+				.skip(skip)
+				.lean();
+
+			return {
+				status: 200,
+				message: "Startup data retrieved",
+				data: startups,
+			};
+
+			// Optimized investors query
+		} else if (type === "investor") {
+			const matchStage = {};
+			if (sector) matchStage["investor.sector"] = sector;
+			if (city) matchStage["investor.location"] = city;
+			if (investmentStage) matchStage["investor.stage"] = investmentStage;
+			if (gender) matchStage.gender = gender;
+			if (sectorPreference)
+				matchStage.sectorPreferences = { $in: [sectorPreference] };
+			if (investmentSize) matchStage.investmentSize = investmentSize;
+			if (searchQuery)
+				matchStage.firstName = { $regex: new RegExp(`^${searchQuery}`, "i") };
+
+			const pipeline = [
+				{
+					$match: {
+						userStatus: "active",
+						investor: { $exists: true },
+					},
+				},
+				{
+					$lookup: {
+						from: "investors",
+						localField: "investor",
+						foreignField: "_id",
+						as: "investor",
+					},
+				},
+				{
+					$unwind: "$investor",
+				},
+				{
+					$match: matchStage,
+				},
+				{
+					$skip: skip,
+				},
+				{
+					$limit: limitNum,
+				},
+				{
+					$project: {
+						password: 0,
+					},
+				},
+			];
+
+			const investors = await UserModel.aggregate(pipeline);
+
+			return {
+				status: 200,
+				message: "Investors data retrieved",
+				data: investors,
+			};
+
+			// For founders
+		} else if (type === "founder") {
+			const matchStage = {};
+			if (sector) matchStage["startup.sector"] = sector;
+			if (city) matchStage["startup.location"] = city;
+			if (gender) matchStage.gender = gender;
+			if (previousExits) matchStage.previousExits = previousExits;
+			if (yearsOfExperience) matchStage.yearsOfExperience = yearsOfExperience;
+			if (education) matchStage.education = education;
+			if (diversityMetrics)
+				matchStage.diversityMetrics = { $in: [diversityMetrics] };
+			if (searchQuery)
+				matchStage.firstName = { $regex: new RegExp(`^${searchQuery}`, "i") };
+
+			const pipeline = [
+				{
+					$match: {
+						userStatus: "active",
+					},
+				},
+				{
+					$lookup: {
+						from: "startups",
+						localField: "_id",
+						foreignField: "founderId",
+						as: "startup",
+					},
+				},
+				{
+					$unwind: "$startup",
+				},
+				{
+					$match: matchStage,
+				},
+				{
+					$skip: skip,
+				},
+				{
+					$limit: limitNum,
+				},
+				{
+					$project: {
+						password: 0,
+					},
+				},
+			];
+
+			const founders = await UserModel.aggregate(pipeline);
+
+			return {
+				status: 200,
+				message: "Founder data retrieved",
+				data: founders,
+			};
+
+			// For VC
+		} else if (type === "vc") {
+			const query = {};
+			if (sector_focus) query.sector_focus = sector_focus;
+			if (stage_focus) query.stage_focus = stage_focus;
+			if (ticket_size) query.ticket_size = { $gte: parseInt(ticket_size, 10) };
+			if (searchQuery)
+				query.name = { $regex: new RegExp(`^${searchQuery}`, "i") };
+
+			const VC = await VCModel.find(query).limit(limitNum).skip(skip).lean();
+
+			return {
+				status: 200,
+				message: "VC data retrieved",
+				data: VC,
+			};
+		}
+
 		return {
-		  status: 200,
-		  message: "Startup data retrieved",
-		  data: startups,
+			status: 400,
+			message: "Invalid 'type' parameter",
 		};
-  
-	  // Optimized investors query
-	  } else if (type === "investor") {
-		const matchStage = {};
-		if (sector) matchStage["investor.sector"] = sector;
-		if (city) matchStage["investor.location"] = city;
-		if (investmentStage) matchStage["investor.stage"] = investmentStage;
-		if (gender) matchStage.gender = gender;
-		if (sectorPreference) matchStage.sectorPreferences = { $in: [sectorPreference] };
-		if (investmentSize) matchStage.investmentSize = investmentSize;
-		if (searchQuery) matchStage.firstName = { $regex: new RegExp(`^${searchQuery}`, "i") };
-  
-		const pipeline = [
-		  {
-			$match: {
-			  userStatus: "active",
-			  investor: { $exists: true }
-			}
-		  },
-		  {
-			$lookup: {
-			  from: "investors",
-			  localField: "investor",
-			  foreignField: "_id",
-			  as: "investor"
-			}
-		  },
-		  {
-			$unwind: "$investor"
-		  },
-		  {
-			$match: matchStage
-		  },
-		  {
-			$skip: skip
-		  },
-		  {
-			$limit: limitNum
-		  },
-		  {
-			$project: {
-			  password: 0
-			}
-		  }
-		];
-  
-		const investors = await UserModel.aggregate(pipeline);
-  
-		return {
-		  status: 200,
-		  message: "Investors data retrieved",
-		  data: investors,
-		};
-  
-	  // For founders
-	  } else if (type === "founder") {
-		const matchStage = {};
-		if (sector) matchStage["startup.sector"] = sector;
-		if (city) matchStage["startup.location"] = city;
-		if (gender) matchStage.gender = gender;
-		if (previousExits) matchStage.previousExits = previousExits;
-		if (yearsOfExperience) matchStage.yearsOfExperience = yearsOfExperience;
-		if (education) matchStage.education = education;
-		if (diversityMetrics) matchStage.diversityMetrics = { $in: [diversityMetrics] };
-		if (searchQuery) matchStage.firstName = { $regex: new RegExp(`^${searchQuery}`, "i") };
-  
-		const pipeline = [
-		  {
-			$match: {
-			  userStatus: "active"
-			}
-		  },
-		  {
-			$lookup: {
-			  from: "startups",
-			  localField: "_id",
-			  foreignField: "founderId",
-			  as: "startup"
-			}
-		  },
-		  {
-			$unwind: "$startup"
-		  },
-		  {
-			$match: matchStage
-		  },
-		  {
-			$skip: skip
-		  },
-		  {
-			$limit: limitNum
-		  },
-		  {
-			$project: {
-			  password: 0
-			}
-		  }
-		];
-  
-		const founders = await UserModel.aggregate(pipeline);
-  
-		return {
-		  status: 200,
-		  message: "Founder data retrieved",
-		  data: founders,
-		};
-  
-	  // For VC
-	  } else if (type === "vc") {
-		const query = {};
-		if (sector_focus) query.sector_focus = sector_focus;
-		if (stage_focus) query.stage_focus = stage_focus;
-		if (ticket_size) query.ticket_size = { $gte: parseInt(ticket_size, 10) };
-		if (searchQuery) query.name = { $regex: new RegExp(`^${searchQuery}`, "i") };
-  
-		const VC = await VCModel.find(query)
-		  .limit(limitNum)
-		  .skip(skip)
-		  .lean();
-  
-		return {
-		  status: 200,
-		  message: "VC data retrieved",
-		  data: VC,
-		};
-	  }
-  
-	  return {
-		status: 400,
-		message: "Invalid 'type' parameter",
-	  };
 	} catch (error) {
-	  console.error("Error getting explore results:", error);
-	  return {
-		status: 500,
-		message: "An error occurred while getting explore results.",
-	  };
+		console.error("Error getting explore results:", error);
+		return {
+			status: 500,
+			message: "An error occurred while getting explore results.",
+		};
 	}
-  };
+};
 
 export const getExploreFilters = async (type) => {
 	try {
