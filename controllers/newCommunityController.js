@@ -8,6 +8,9 @@ import {
   addMembersToCommunity,
   deleteCommunity,
   getCommunityByname,
+  getAllCommunities,
+  addProductToCommunity,
+  buyProduct
 } from "../services/NewCommunityService.js";
 
 export const createCommunityController = async (req, res) => {
@@ -27,6 +30,19 @@ export const getCommunityByIdController = async (req, res) => {
   try {
     const { communityId } = req.params;
     const response = await getCommunityById(communityId);
+    return res.status(response.status).send(response);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).send({
+      status: 500,
+      message: "An error occurred while getting community.",
+    });
+  }
+};
+
+export const getAllCommunitiesController = async (req, res) => {
+  try {
+    const response = await getAllCommunities();
     return res.status(response.status).send(response);
   } catch (error) {
     console.error(error);
@@ -115,6 +131,7 @@ export const addMembersToCommunityController = async (req, res) => {
     const { communityId } = req.params;
     const { memberIds } = req.body;
     const response = await addMembersToCommunity(communityId, memberIds);
+    console.log(response)
     return res.status(response.status).send(response);
   } catch (error) {
     console.error(error);
@@ -136,6 +153,46 @@ export const deleteCommunityController = async (req, res) => {
     return res.status(500).send({
       status: 500,
       message: "An error occurred while deleting the community.",
+    });
+  }
+};
+
+export const addProductController = async (req, res) => {
+  const { communityId } = req.params; 
+  const { name, description, is_free, image, URLS, amount } = req.body; 
+
+  try {
+    
+    const productData = {
+      name,
+      description,
+      is_free,
+      image,
+      URLS,
+      amount
+    };
+    const updatedCommunity = await addProductToCommunity(communityId, productData);
+    return res.status(200).json({
+      message: "Product added successfully",
+      data: updatedCommunity,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: error.message || "An error occurred while adding the product" });
+  }
+};
+
+export const buyProductController = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { productId, communityId } = req.params;
+    const response = await buyProduct(userId, productId, communityId);
+    return res.status(response.status).send(response);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).send({
+      status: 500,
+      message: "An error occurred while purchasing the product.",
     });
   }
 };
