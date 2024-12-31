@@ -70,6 +70,10 @@ const postSchema = new Schema(
     allow_multiple_answers: {
       type: Boolean,
       default: true
+    },
+    communityId: {
+      type: Schema.Types.ObjectId,
+      ref: "NewCommunities"
     }
   },
   {
