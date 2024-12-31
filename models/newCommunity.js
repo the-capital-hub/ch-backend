@@ -1,5 +1,44 @@
 import { Schema, model } from "mongoose";
 
+const memberSchema = new Schema ({
+  member: {
+    type: Schema.Types.ObjectId,
+    ref: "Users",
+  },
+  joined_date: {
+    type: Date,
+    default: Date.now,
+  }
+})
+ 
+const productSchema = new Schema({
+  name: {
+    type:String, 
+    required: true
+  },
+  description: {
+    type:String
+  },
+  is_free:{
+    type:Boolean,
+    default: true
+  },
+  amount: {
+    type:Number
+  },
+  image: {
+    type: String
+  },
+  purchased_by: [{
+    type: Schema.Types.ObjectId,
+    ref: "Users",
+  }],
+  URLS: [
+    {
+      type: String
+    }
+  ]
+})
 const CommunitySchema = new Schema({
     image:{
         type:String
@@ -39,10 +78,7 @@ const CommunitySchema = new Schema({
     default: false
   },
   members: [
-    {
-      type: Schema.Types.ObjectId,
-      ref: "Users",
-    },
+   memberSchema
   ],
   posts: [
     {
@@ -50,7 +86,12 @@ const CommunitySchema = new Schema({
       ref: "Posts",
     },
   ],
-
+  products: [
+    productSchema
+  ],
+  terms_and_conditions: [{
+    type: String
+  }]
 },
 {
     timestamps: true,

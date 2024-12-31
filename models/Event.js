@@ -37,6 +37,10 @@ const eventSchema = new mongoose.Schema(
 			type: Number,
 			default: 0,
 		},
+		communityId: {
+			type: mongoose.Schema.Types.ObjectId,
+			ref: "NewCommunities",
+		}
 	},
 	{
 		timestamps: true,

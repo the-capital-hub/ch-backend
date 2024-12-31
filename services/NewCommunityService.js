@@ -2,6 +2,7 @@ import { cloudinary } from "../utils/uploadImage.js";
 import { MessageModel } from "../models/Message.js";
 import { UserModel } from "../models/User.js";
 import community_schema from "../models/newCommunity.js";
+import moment from 'moment';
 
 export const createCommunity = async (communitydata) => {
   try {
@@ -48,6 +49,20 @@ if(isSubscribed){
 export const getCommunityById = async (communityId) => {
   try {
     const community = await community_schema.findById(communityId)
+      .populate({
+        path: 'members.member',  
+        populate: [
+          { path: 'startUp' },   
+          { path: 'investor' }   
+        ]
+      })
+      .populate({
+        path: 'adminId',
+        populate: [
+          { path: 'startUp' },
+          { path: 'investor' }
+        ]
+      });
 
     if (!community) {
       return {
@@ -95,7 +110,43 @@ export const getCommunityByname = async (communityName) => {
 
 export const getAllCommunitiesByUserId = async (userId) => {
   try {
-    const communities = await community_schema.find({ adminId: userId })
+    const communities = await community_schema.find({
+      $or: [
+        { adminId: userId },
+        { 'members.member': userId }
+      ]
+    })
+      .populate({
+        path: "members.member",
+        model: "Users",
+        select: "firstName lastName profilePicture oneLinkId",
+      })
+      .lean();
+
+    // Add isOwner flag to each community
+    const communitiesWithRole = communities.map(community => ({
+      ...community,
+      role: community.adminId.toString() === userId ? 'owner' : 'member'
+    }));
+
+    return {
+      status: 200,
+      message: 'Communities retrieved successfully',
+      data: communitiesWithRole,
+    };
+
+  } catch (error) {
+    console.error(error);
+    return {
+      status: 500,
+      message: 'An error occurred while retrieving communities.',
+    };
+  }
+};
+
+export const getAllCommunities = async () => {
+  try {
+    const communities = await community_schema.find()
       .populate({
         path: "members",
         model: "Users",
@@ -143,8 +194,7 @@ export const updateCommunity = async (communityId, updatedData) => {
     community.amount = updatedData.amount || community.amount;
     community.isOpen = updatedData.isOpen || community.isOpen;
     community.about = updatedData.about || community.about;
-
-
+    community.terms_and_conditions = updatedData.terms_and_conditions || community.terms_and_conditions;
 
     await community.save();
     console.log(community);
@@ -239,14 +289,41 @@ export const getUnAddedMembers = async (userId, communityId) => {
 export const addMembersToCommunity = async (communityId, memberIds) => {
   try {
     const community = await community_schema.findById(communityId);
+    
     if (!community) {
       return {
         status: 404,
         message: "Community not found",
       };
     }
-    community.members = [...new Set([...community.members, ...memberIds])];
+
+    // Check if the community subscription is 'free'
+    if (community.subscription !== 'free') {
+      return {
+        status: 400,
+        message: "Members cannot be added to a paid community",
+      };
+    }
+
+    // Prepare the new members to add to the members array
+    const newMembers = memberIds.map(memberId => ({
+      member: memberId,
+      joined_date: moment().toISOString(), // Set the current date as the joined_date
+    }));
+
+    // Add new members to the existing members array, ensuring no duplicates
+    community.members = [
+      ...community.members,
+      ...newMembers
+    ];
+
+    community.members = Array.from(
+      new Map(community.members.map(item => [item.member.toString(), item])).values()
+    );
+
+    // Save the community document after modifying the members array
     await community.save();
+
     return {
       status: 200,
       message: "Members added to the community successfully",
@@ -279,6 +356,89 @@ export const deleteCommunity = async (communityId, userId) => {
     return {
       status: 500,
       message: 'An error occurred while deleting the community',
+    };
+  }
+};
+
+export const addProductToCommunity = async (communityId, productData) => {
+  try {
+    
+
+    if (productData.image) {
+      const { secure_url } = await cloudinary.uploader.upload(productData.image, {
+        folder: `${process.env.CLOUDINARY_FOLDER}/posts/images`,
+        format: "webp",
+        unique_filename: true,
+      });
+      productData.image = secure_url; 
+    }
+
+    
+    const community = await community_schema.findById(communityId);
+
+    if (!community) {
+      throw new Error("Community not found");
+    }
+
+    
+    community.products.push(productData);
+
+    
+    await community.save();
+
+    return community; 
+  } catch (error) {
+    throw error; 
+  }
+};
+
+export const buyProduct = async (userId, productId, communityId) => {
+  try {
+    const community = await community_schema.findById(communityId);
+    
+    if (!community) {
+      return {
+        status: 404,
+        message: "Community not found"
+      };
+    }
+
+    const product = community.products.id(productId);
+    
+    if (!product) {
+      return {
+        status: 404,
+        message: "Product not found"
+      };
+    }
+
+    if (!product.is_free) {
+      return {
+        status: 400,
+        message: "This product is not free"
+      };
+    }
+
+    if (product.purchased_by.includes(userId)) {
+      return {
+        status: 400,
+        message: "You have already purchased this product"
+      };
+    }
+
+    product.purchased_by.push(userId);
+    await community.save();
+
+    return {
+      status: 200,
+      message: "Product purchased successfully",
+      data: product
+    };
+  } catch (error) {
+    console.error(error);
+    return {
+      status: 500,
+      message: "An error occurred while purchasing the product"
     };
   }
 };
