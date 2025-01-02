@@ -72,6 +72,18 @@ export const registerUserService = async (user) => {
 		newUser.connections.push(targetUserId);
 		await newUser.save();
 
+		// Send welcome email
+		const emailContent = await ejs.renderFile("./public/welcomeEmail.ejs", {
+			firstName: user.firstName,
+		});
+
+		await transporter.sendMail({
+			from: `"The Capital Hub" <${process.env.EMAIL_USER}>`,
+			to: user.email,
+			subject: "Welcome to CapitalHub!",
+			html: emailContent,
+		});
+
 		return newUser;
 	} catch (error) {
 		throw error;
