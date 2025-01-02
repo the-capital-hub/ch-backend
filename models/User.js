@@ -1,130 +1,48 @@
 import mongoose, { Schema, model } from "mongoose";
-// import validator from "validator";
 import { hashPassword } from "../utils/passwordManager.js";
 
+// Collection sub-schema
 const collectionSchema = new Schema(
 	{
-		name: {
-			type: String,
-			required: true,
-		},
-		posts: [
-			{
-				type: Schema.Types.ObjectId,
-				ref: "Posts",
-			},
-		],
+		name: { type: String, required: true },
+		posts: [{ type: Schema.Types.ObjectId, ref: "Posts" }],
 	},
-	{
-		timestamps: true,
-	}
+	{ timestamps: true }
 );
 
+// Function to generate random number for oneLinkId
+function generateRandomNumber() {
+	return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+// Main user schema
 const userSchema = new Schema(
 	{
-		firstName: {
-			type: String,
-			// required: [true, "User must have a first name."],
-			// minlength: [3, "First Name must not be shorter than 3 characters"],
-			// maxlength: [10, "First Name must not be longer than 10 characters"],
-			// validate: { validator: validator.isAlpha, message: "Invalid First Name" },
-			trim: true,
-		},
-		lastName: {
-			type: String,
-			// required: [true, "User must have a last name."],
-			// minlength: [3, "Last Name must not be shorter than 3 characters"],
-			// maxlength: [10, "Last Name must not be longer than 10 characters"],
-			// validate: { validator: validator.isAlpha, message: "Invalid Last Name" },
-			trim: true,
-		},
-		linkedinId: {
-			type: String,
-		},
-		linkedinTokenExpiryDate: {
-			type: Date,
-		},
-		linkedin: { type: String },
+		// Basic Info
+		firstName: { type: String, trim: true },
+		lastName: { type: String, trim: true },
 		userName: { type: String },
-		phoneNumber: {
-			type: String,
-			// unique: true,
-			// required: [true, "Chief Warden must have an contact number."],
-			// validate: {
-			//   validator: (number) => number.toString().length === 13,
-			//   message: "Invalid phone number",
-			// },
-		},
-		email: {
-			type: String,
-			trim: true,
-			// unique: true,
-			lowercase: true,
-			// required: [true, "User must have an email."],
-			// validate: {
-			//   validator: function (email) {
-			//     return /[a-z0-9]+@[a-z0-9]+.com/i.test(email);
-			//   },
-			//   message: "Invalid e-Mail",
-			// },
-		},
-		password: {
-			type: String,
-			// required: [true, "User must have a password."],
-		},
-		experience: String,
-		// experience: [
-		//   {
-		//     type: String,
-		//   },
-		// ],
-		bio: {
-			type: String,
-			trim: true,
-		},
-		education: {
-			type: String,
-			trim: true,
-		},
-		location: {
-			type: String,
-			trim: true,
-			// required: [true, "User must provide location"],
-		},
-		gender: {
-			type: String,
-			// required: [true, "User must provide gender"],
-		},
-		startUp: {
-			type: Schema.Types.ObjectId,
-			ref: "StartUps",
-		},
+		email: { type: String, trim: true, lowercase: true },
+		password: { type: String },
+		phoneNumber: { type: String },
+		gender: { type: String },
+		location: { type: String, trim: true },
 		profilePicture: {
 			type: String,
 			default:
 				"https://res.cloudinary.com/drjt9guif/image/upload/v1723448166/TheCapitalHub/startUps/logos/viprylq9wb7e4qx6u8dt.webp",
 		},
+		bio: { type: String, trim: true },
 
+		// Professional Info
+		companyName: { type: String, trim: true }, //new field
 		designation: { type: String },
-		savedPosts: [collectionSchema],
-		connections: [
-			{
-				type: Schema.Types.ObjectId,
-				ref: "Users",
-			},
-		],
-		connectionsSent: [
-			{
-				type: Schema.Types.ObjectId,
-				ref: "Users",
-			},
-		],
-		connectionsReceived: [
-			{
-				type: Schema.Types.ObjectId,
-				ref: "Users",
-			},
-		],
+		industry: { type: String },
+		yearsOfExperience: { type: String },
+
+		// Experience & Education Details (Legacy fields)
+		experience: { String },
+		education: { type: String, trim: true },
 		recentExperience: [
 			{
 				logo: String,
@@ -143,77 +61,55 @@ const userSchema = new Schema(
 				course: String,
 			},
 		],
-		investor: {
-			type: Schema.Types.ObjectId,
-			ref: "Investors",
-		},
-		pinnedChat: [
+
+		// Latest Experience and Education it will replace the above fields i.e. recentExperience, recentEducation, experience and education
+		latestExperience: [
 			{
-				type: Schema.Types.ObjectId,
-				ref: "Chats",
+				company: String,
+				role: String,
+				duration: {
+					startYear: Date,
+					endYear: Date,
+				},
+				description: String,
 			},
 		],
-		featuredPosts: [
+		latestEducation: [
 			{
-				type: Schema.Types.ObjectId,
-				ref: "Posts",
+				school: String,
+				course: String,
+				year: {
+					startYear: Date,
+					endYear: Date,
+				},
+				description: String,
 			},
 		],
-		companyUpdate: [
-			{
-				type: Schema.Types.ObjectId,
-				ref: "Posts",
-			},
-		],
-		userStatus: {
-			type: String,
-			default: "active",
-		},
+
+		// LinkedIn Integration
+		linkedinId: { type: String },
+		linkedinTokenExpiryDate: { type: Date },
+		linkedin: { type: String },
+
+		// Connections
+		connections: [{ type: Schema.Types.ObjectId, ref: "Users" }],
+		connectionsSent: [{ type: Schema.Types.ObjectId, ref: "Users" }],
+		connectionsReceived: [{ type: Schema.Types.ObjectId, ref: "Users" }],
 		blockedUsers: [{ type: Schema.Types.ObjectId, ref: "Users" }],
-		oneLinkId: {
-			type: String,
-			default: generateRandomNumber,
-			unique: true,
-			required: true,
-		},
-		isInvestor: {
-			type: String,
-			default: false,
-		},
-		isVc: {
-			type: Boolean,
-			default: false,
-		},
-		secretKey: {
-			type: String,
-		},
-		achievements: [
-			{
-				type: Schema.Types.ObjectId,
-				ref: "Achievement",
-			},
-		],
-		industry: {
-			type: String,
-		},
-		//startup user
-		yearsOfExperience: {
-			type: String,
-		},
-		previousExits: {
-			type: String,
-		},
-		diversityMetrics: [
-			{
-				type: String,
-			},
-		],
-		//investor user
-		sectorPreferences: [
-			{
-				type: String,
-			},
-		],
+
+		// Posts & Collections
+		savedPosts: [collectionSchema],
+		featuredPosts: [{ type: Schema.Types.ObjectId, ref: "Posts" }],
+		companyUpdate: [{ type: Schema.Types.ObjectId, ref: "Posts" }],
+
+		// Investor Related
+		isInvestor: { type: String, default: false },
+		isVc: { type: Boolean, default: false },
+		investor: { type: Schema.Types.ObjectId, ref: "Investors" },
+		investmentSize: { type: String },
+		investmentStage: { type: String },
+		sectorPreferences: [{ type: String }],
+		investmentPhilosophy: { type: String },
 		philosophy: {
 			importanceOfManagement: String,
 			roleAsAInvestor: String,
@@ -227,59 +123,11 @@ const userSchema = new Schema(
 			evaluateCompanyGrowthPotential: String,
 			weightGaveToTechnologicalInnovation: String,
 		},
-		investmentPhilosophy: { type: String },
-		// philosophy: {
-		//   whoareYou: String,
-		//   yourBuildBefore: String,
-		//   whyDoingThis: String,
-		//   problem: String,
-		//   solution: String,
-		//   targetMarket: String,
-		//   mvpProductYet: String,
-		//   gainedAnyTraction: String,
-		//   yourNextStep: String,
-		//   useTheFundingRaised: String,
-		// },
 
-		// importanceOfManagament: {
-		//   type: String,
-		// },
-		// roleAsAInvestor: {
-		//   type: String,
-		// },
-		// founderAlmaMaterMatters: {
-		//   type: String,
-		// },
-		// riskManagementInInvestments: {
-		//   type: String,
-		// },
-		// guideOnSellingInvestments: {
-		//   type: String,
-		// },
-		// timingInInvestmentDecisions: {
-		//   type: String,
-		// },
-		// macroeconomicFactorsInfluenceInvestments: {
-		//   type: String,
-		// },
-		// assessCompanyCompetitiveAdvantage: {
-		//   type: String,
-		// },
-		// industryTrendsHoldInYourStrategy: {
-		//   type: String,
-		// },
-		// evaluateCompanyGrowthPotential: {
-		//   type: String,
-		// },
-		// weightGaveToTechnologicalInnovation: {
-		//   type: String,
-		// },
-		investmentSize: {
-			type: String,
-		},
-		investmentStage: {
-			type: String,
-		},
+		// Startup Related
+		startUp: { type: Schema.Types.ObjectId, ref: "StartUps" },
+		previousExits: { type: String },
+		diversityMetrics: [{ type: String }],
 		fundingViaCapitalhubQuestions: {
 			targetMarket: String,
 			whyRightTimeForYourStartUp: String,
@@ -287,97 +135,47 @@ const userSchema = new Schema(
 			biggestCompetitors: String,
 			revenueGenerated: String,
 		},
-		subReferenceId: {
+
+		// Chat & Communication
+		pinnedChat: [{ type: Schema.Types.ObjectId, ref: "Chats" }],
+		meetingToken: { type: Object },
+		Availability: { type: Schema.Types.Boolean, ref: "Availability" },
+		priorityDMPrice: { type: Number, default: 99 },
+
+		// Achievements & Events
+		achievements: [{ type: Schema.Types.ObjectId, ref: "Achievement" }],
+		eventId: [{ type: Schema.Types.ObjectId, ref: "Events" }],
+		webinars: [{ type: Schema.Types.ObjectId, ref: "Webinars" }],
+
+		// Account Status & Settings
+		userStatus: { type: String, default: "active" },
+		oneLinkId: {
 			type: String,
+			default: generateRandomNumber,
+			unique: true,
+			required: true,
 		},
+		secretKey: { type: String },
+		isAdmin: { type: Boolean, default: false },
+		isTopVoice: {
+			status: { type: Boolean, default: false },
+			expiry: { type: Date },
+		},
+
+		// Subscription
+		subReferenceId: { type: String },
 		subscriptionType: {
 			type: String,
 			enum: ["Basic", "Standard", "Pro"],
 			default: "Basic",
 		},
-		isSubscribed: {
-			type: Boolean,
-			default: false,
-		},
-		trialStartDate: {
-			type: Date,
-		},
-		meetingToken: {
-			type: Object,
-		},
-		investorIdCount: [
-			{
-				type: String,
-			},
-		],
-		eventId: [
-			{
-				type: Schema.Types.ObjectId,
-				ref: "Events",
-			},
-		],
-		Availability: {
-			type: Schema.Types.Boolean,
-			ref: "Availability",
-		},
-		isAdmin: {
-			type: Boolean,
-			default: false,
-		},
-		isTopVoice: {
-			status: {
-				type: Boolean,
-				default: false,
-			},
-			expiry: {
-				type: Date,
-			},
-		},
-		webinars: [
-			{
-				type: Schema.Types.ObjectId,
-				ref: "Webinars",
-			},
-		],
-		priorityDMPrice: {
-			type: Number,
-			default: 99,
-		},
+		isSubscribed: { type: Boolean, default: false },
+		trialStartDate: { type: Date },
+		investorIdCount: [{ type: String }],
 	},
 	{
 		timestamps: true,
 	}
 );
-
-// userSchema.pre("save", async function (next) {
-//   try {
-//     if (this.isModified && this.isModified("password")) {
-//       this.password = await hashPassword(this.password);
-//     }
-//     next();
-//   } catch (error) {
-//     throw error;
-//   }
-// });
-
-// userSchema.pre(
-//   ["updateOne", "findByIdAndUpdate", "findOneAndUpdate"],
-//   async function (next) {
-//     try {
-//       const data = this.getUpdate();
-//       if (data?.password) {
-//         data.password = hashPassword(this.password);
-//       }
-//       next();
-//     } catch (error) {
-//       throw error;
-//     }
-//   }
-// );
-
-function generateRandomNumber() {
-	const randomNumber = Math.floor(100000 + Math.random() * 900000);
-	return randomNumber.toString();
-}
 
 export const UserModel = model("Users", userSchema);
