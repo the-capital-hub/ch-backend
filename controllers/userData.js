@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
-import nodemailer from "nodemailer"
-import ejs from 'ejs';
+import nodemailer from "nodemailer";
+import ejs from "ejs";
 import {
 	registerUserService,
 	getUsersService,
@@ -39,6 +39,7 @@ import {
 	getInactiveFounders,
 	sendMailtoInactiveFounders,
 	getUserAvaibility,
+	getUserByUsername,
 } from "../services/userService.js";
 
 import { sendMail } from "../utils/mailHelper.js";
@@ -213,6 +214,17 @@ export const getUsersByUserNameController = async (req, res) => {
 		return res.status(200).send(getUser.message);
 	} catch (error) {
 		console.error("Error in getUsersByUserNameController:", error);
+		return res.status(500).send({ message: "Internal server error" });
+	}
+};
+
+export const getUserByUsernameController = async (req, res) => {
+	try {
+		const { username } = req.params;
+		const response = await getUserByUsername(username);
+		return res.status(response.status).send(response);
+	} catch (error) {
+		console.error(error);
 		return res.status(500).send({ message: "Internal server error" });
 	}
 };
@@ -1304,19 +1316,33 @@ export const getUserAvaibilityController = async (req, res) => {
 	}
 };
 
-
 // New function to send report email
 export const sendReportEmail = async (req, res) => {
 	try {
-		const { postPublicLink, postId, reportReason, reporterEmail, reporterId, reportTime, email } = req.body;
+		const {
+			postPublicLink,
+			postId,
+			reportReason,
+			reporterEmail,
+			reporterId,
+			reportTime,
+			email,
+		} = req.body;
 
 		// Validate required fields
-		if (!postPublicLink || !postId || !reportReason || !reporterEmail || !reporterId || !reportTime) {
+		if (
+			!postPublicLink ||
+			!postId ||
+			!reportReason ||
+			!reporterEmail ||
+			!reporterId ||
+			!reportTime
+		) {
 			return res.status(400).send("All fields are required.");
 		}
 
 		// Prepare email content
-		const emailContent = await ejs.renderFile("./public/reportmail.ejs",{
+		const emailContent = await ejs.renderFile("./public/reportmail.ejs", {
 			postPublicLink,
 			postId,
 			reportReason,
@@ -1326,18 +1352,18 @@ export const sendReportEmail = async (req, res) => {
 		});
 
 		// Send email using the nodemailer function
-	const response = await transporter.sendMail({
-		from: `"The Capital Hub" <${process.env.EMAIL_USER}>`,
-		to: email,
-		subject: "Post Reported on The Capital Hub",
-		html: emailContent,
-	})
+		const response = await transporter.sendMail({
+			from: `"The Capital Hub" <${process.env.EMAIL_USER}>`,
+			to: email,
+			subject: "Post Reported on The Capital Hub",
+			html: emailContent,
+		});
 
-		
-	return res.status(200).send("Report email sent successfully.");
-	
+		return res.status(200).send("Report email sent successfully.");
 	} catch (error) {
 		console.error("Error sending report email:", error);
-		return res.status(500).send("An error occurred while sending the report email.");
+		return res
+			.status(500)
+			.send("An error occurred while sending the report email.");
 	}
 };

@@ -34,8 +34,9 @@ import newsRouter from "./routes/newsRoutes.js";
 import meetingsRoutes from "./routes/meetingsRoutes.js";
 import ResourceRouter from "./routes/resourceRoute.js";
 import ThoughtsRoutes from "./routes/thoughtsRoutes.js";
-import newCommunityRoutes from "./routes/NewCommunityRoutes.js"
-
+import newCommunityRoutes from "./routes/NewCommunityRoutes.js";
+import WebinarsRoutes from "./routes/webinarsRoutes.js";
+import priorityDMRoutes from "./routes/priorityDMRoutes.js";
 
 //inactive users mail function
 import { sendMailtoInactiveFounders } from "./services/userService.js";
@@ -78,7 +79,9 @@ app.use("/news", newsRouter);
 app.use("/meetings", meetingsRoutes);
 app.use("/resources", ResourceRouter);
 app.use("/thoughts", ThoughtsRoutes);
-app.use("/Communities", newCommunityRoutes)
+app.use("/Communities", newCommunityRoutes);
+app.use("/webinars", WebinarsRoutes);
+app.use("/priorityDM", priorityDMRoutes);
 // documentation upload
 
 const storage = multer.diskStorage({
@@ -116,23 +119,22 @@ const io = new Server(server, {
 });
 
 // Cron job to remove expired LinkedIn tokens
-cron.schedule('0 0 * * *', async () => {  
+cron.schedule("0 0 * * *", async () => {
 	try {
-	// setting up time of the moment, to validate the expiry time of linkedin token	
-	  const now = moment().toISOString(); 
-	  const result = await UserModel.updateMany(
-		{ linkedinTokenExpiryDate: { $lt: now } },  // Find users with expired tokens
-		{ $unset: { linkedinId: "", linkedinTokenExpiryDate: "" } }  // Remove the fields from the document
-	  );
-	  console.log(`Expired tokens removed from ${result.modifiedCount} users.`);
+		// setting up time of the moment, to validate the expiry time of linkedin token
+		const now = moment().toISOString();
+		const result = await UserModel.updateMany(
+			{ linkedinTokenExpiryDate: { $lt: now } }, // Find users with expired tokens
+			{ $unset: { linkedinId: "", linkedinTokenExpiryDate: "" } } // Remove the fields from the document
+		);
+		console.log(`Expired tokens removed from ${result.modifiedCount} users.`);
 
-	  //sending mails to every inactive user, for 7 and 30 days
-	  await sendMailtoInactiveFounders();
-
+		//sending mails to every inactive user, for 7 and 30 days
+		await sendMailtoInactiveFounders();
 	} catch (error) {
-	  console.error("Error removing expired tokens:", error);
+		console.error("Error removing expired tokens:", error);
 	}
-  });
+});
 
 let activeUsers = [];
 io.on("connection", (socket) => {
