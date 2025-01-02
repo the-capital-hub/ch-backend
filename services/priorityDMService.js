@@ -5,6 +5,7 @@ import {
 	getUserRegistrationTemplate,
 	getPriorityDMSuccessTemplate,
 	getFounderPriorityDMTemplate,
+	getPriorityDMAnswerTemplate,
 } from "../utils/mailHelper.js";
 // imports for payment
 import crypto from "crypto";
@@ -516,7 +517,9 @@ const sendFounderNotification = async (founder, user, question) => {
 
 export const getPriorityDMForUser = async (userId) => {
 	try {
-		const priorityDM = await PriorityModel.find({ userId });
+		const priorityDM = await PriorityModel.find({ userId }).populate(
+			"founderId"
+		);
 		return {
 			status: 200,
 			message: "Success",
@@ -530,7 +533,9 @@ export const getPriorityDMForUser = async (userId) => {
 
 export const getPriorityDMForFounder = async (userId) => {
 	try {
-		const priorityDM = await PriorityModel.find({ founderId: userId });
+		const priorityDM = await PriorityModel.find({ founderId: userId }).populate(
+			"userId"
+		);
 		return {
 			status: 200,
 			message: "Success",
@@ -547,7 +552,7 @@ export const updatePriorityDM = async (id, userId, data) => {
 		const priorityDM = await PriorityModel.findOne({
 			_id: id,
 			founderId: userId,
-		});
+		}).populate("userId");
 
 		if (!priorityDM) {
 			return {
@@ -560,6 +565,8 @@ export const updatePriorityDM = async (id, userId, data) => {
 		priorityDM.isAnswered = true;
 		await priorityDM.save();
 
+		await sendAnswerSuccessNotification(priorityDM.userId, data.answer);
+
 		return {
 			status: 200,
 			message: "Success",
@@ -568,5 +575,42 @@ export const updatePriorityDM = async (id, userId, data) => {
 	} catch (error) {
 		console.error("Error updating priority DM:", error);
 		throw new Error("Failed to update priority DM");
+	}
+};
+
+const sendAnswerSuccessNotification = async (user, answer) => {
+	const emailOptions = {
+		from: {
+			name: "The CapitalHub Team",
+			address: process.env.EMAIL_USER,
+		},
+		to: user.email,
+		subject: `🎉 ✨ Founder Successfully Answered your Priority DM: ${user.firstName} ${user.lastName}`, // Your Priority DM Has Been Answered!
+		html: getPriorityDMAnswerTemplate(
+			user.firstName + " " + user.lastName,
+			user.email,
+			user.phoneNumber,
+			answer
+		),
+	};
+
+	await sendEmail(emailOptions);
+};
+
+export const getQuestionById = async (userId, questionId) => {
+	try {
+		const question = await PriorityModel.findOne({
+			_id: questionId,
+		})
+			.populate("founderId")
+			.populate("userId");
+		return {
+			status: 200,
+			message: "Success",
+			data: question,
+		};
+	} catch (error) {
+		console.error("Error fetching question:", error);
+		throw new Error("Failed to fetch question");
 	}
 };

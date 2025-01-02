@@ -191,10 +191,45 @@ const getFounderPriorityDMTemplate = (userName, userEmail, message) => {
   `;
 };
 
+// Email template for when founder answers a priority DM
+const getPriorityDMAnswerTemplate = (userName, email, mobile, answer) => {
+	return `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #28a745;">You've Received a Response! 💬</h2>
+        <p>Dear ${userName},</p>
+        
+        <p>Great news! The founder has responded to your priority DM.</p>
+        
+        <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
+            <h3 style="color: #333;">Response Details:</h3>
+            <div style="background-color: #ffffff; padding: 15px; border-left: 4px solid #28a745; margin: 10px 0;">
+                <p style="margin: 0; line-height: 1.6;">${answer}</p>
+            </div>
+        </div>
+  
+        <div style="background-color: #e8f5e9; padding: 15px; border-radius: 5px; margin: 20px 0;">
+            <h3 style="color: #2e7d32;">What's Next?</h3>
+            <p>You can view this response and your complete conversation history in your dashboard.</p>
+            <p><a href="#" style="color: #2e7d32; text-decoration: underline;">Click here to view your dashboard</a></p>
+            <p style="font-size: 0.9em; color: #666;">Feel free to send another priority DM if you have more questions.</p>
+        </div>
+  
+        <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
+            <p style="margin: 0; font-size: 0.9em; color: #666;">
+                <strong>Note:</strong> This email was sent to ${email}. If you didn't request this interaction, please contact our support team.
+            </p>
+        </div>
+  
+        <p>Best regards,<br>The CapitalHub Team</p>
+    </div>
+    `;
+};
+
 export {
 	getSuccessEmailTemplate,
 	getFailureEmailTemplate,
 	getUserRegistrationTemplate,
 	getPriorityDMSuccessTemplate,
 	getFounderPriorityDMTemplate,
+	getPriorityDMAnswerTemplate,
 };
