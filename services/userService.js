@@ -78,7 +78,7 @@ export const registerUserService = async (user) => {
 	}
 };
 
-export const getUserByUserName = async (username) => {
+export const getUserAnalyticsDataByUserName = async (username) => {
 	try {
 		if (!username) {
 			return {

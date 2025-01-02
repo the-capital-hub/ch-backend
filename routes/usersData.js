@@ -2,6 +2,8 @@ import express from "express";
 
 import {
 	getUsersController,
+	getUserByUsernameController,
+	getUserAnalyticsDataByUserNameController,
 	registerUserController,
 	loginUserController,
 	getUserByIdController,
@@ -35,8 +37,6 @@ import {
 	handelLinkedin,
 	blockUserController,
 	getUserByIdBodyController,
-	getUsersByUserNameController,
-	getUserByUsernameController,
 	unblockUserController,
 	getUserEmailByIdController,
 	getUserAnalyticsController,
@@ -93,7 +93,7 @@ router.post("/linkedInLogin", linkedInLoginController);
 router.get("/getUserAnalytics/:userId", getUserAnalyticsController);
 router.get("/getUserProfileViews/:userId", getUserProfileViewsController);
 
-router.post("/getUserByUserName", getUsersByUserNameController);
+router.post("/getUserByUserName", getUserAnalyticsDataByUserNameController);
 router.get("/getUserByUsername/:username", getUserByUsernameController);
 // Authorized routes below
 router.use(authenticateToken);
