@@ -7,6 +7,7 @@ import {
 	getPriorityDMForUserController,
 	getPriorityDMForFounderController,
 	updatePriorityDMController,
+	getPriorityDMByIdController,
 } from "../controllers/priorityDMController.js";
 
 const router = express.Router();
@@ -19,6 +20,8 @@ router.post("/verifyPayment", paymentVerifyController);
 router.use(authenticateToken);
 router.get("/getPriority-DMForUser", getPriorityDMForUserController);
 router.get("/getPriority-DMForFounder", getPriorityDMForFounderController);
+
+router.get("/getPriorityDMById/:questionId", getPriorityDMByIdController);
 router.patch("/updatePriority-DM/:priorityDMId", updatePriorityDMController);
 
 export default router;

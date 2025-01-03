@@ -2,9 +2,10 @@ import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
 import ejs from "ejs";
 import {
+	getUserByUsername,
 	registerUserService,
 	getUsersService,
-	getUserByUserName,
+	getUserAnalyticsDataByUserName,
 	loginUserService,
 	getUserById,
 	updateUserData,
@@ -39,7 +40,6 @@ import {
 	getInactiveFounders,
 	sendMailtoInactiveFounders,
 	getUserAvaibility,
-	getUserByUsername,
 } from "../services/userService.js";
 
 import { sendMail } from "../utils/mailHelper.js";
@@ -194,7 +194,8 @@ export const createUser = async (req, res) => {
 	}
 };
 
-export const getUsersByUserNameController = async (req, res) => {
+export const getUserAnalyticsDataByUserNameController = async (req, res) => {
+	//getUserAnalyticsDataByUserName
 	try {
 		const { username } = req.body;
 
@@ -205,7 +206,7 @@ export const getUsersByUserNameController = async (req, res) => {
 
 		// console.log(`Received request to get user by username: ${username}`);
 
-		const getUser = await getUserByUserName(username);
+		const getUser = await getUserAnalyticsDataByUserName(username);
 
 		if (getUser.status === 404) {
 			return res.status(404).send({ message: "User not found" });

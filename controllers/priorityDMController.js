@@ -4,6 +4,7 @@ import {
 	getPriorityDMForUser,
 	getPriorityDMForFounder,
 	updatePriorityDM,
+	getQuestionById,
 } from "../services/priorityDMService.js";
 
 export const createPaymentSessionController = async (req, res) => {
@@ -68,6 +69,20 @@ export const updatePriorityDMController = async (req, res) => {
 		res.status(response.status).send(response);
 	} catch (error) {
 		console.error(error);
+		res.status(500).send({
+			status: 500,
+			message: "An error occurred while getting priority DM.",
+		});
+	}
+};
+
+export const getPriorityDMByIdController = async (req, res) => {
+	try {
+		const { questionId } = req.params;
+		const { userId } = req;
+		const response = await getQuestionById(userId, questionId);
+		res.status(response.status).send(response);
+	} catch (error) {
 		res.status(500).send({
 			status: 500,
 			message: "An error occurred while getting priority DM.",
