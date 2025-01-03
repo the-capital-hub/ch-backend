@@ -48,40 +48,21 @@ const userSchema = new Schema(
 				logo: String,
 				companyName: String,
 				location: String,
-				experienceDuration: String,
+				experienceDuration: {
+					startYear: Date,
+					endYear: Date,
+				},
 				role: String,
+				description: String,
 			},
 		],
 		recentEducation: [
 			{
 				logo: String,
 				schoolName: String,
+				course: String,
+				passoutYear: Date,
 				location: String,
-				passoutYear: Number,
-				course: String,
-			},
-		],
-
-		// Latest Experience and Education it will replace the above fields i.e. recentExperience, recentEducation, experience and education
-		latestExperience: [
-			{
-				company: String,
-				role: String,
-				duration: {
-					startYear: Date,
-					endYear: Date,
-				},
-				description: String,
-			},
-		],
-		latestEducation: [
-			{
-				school: String,
-				course: String,
-				year: {
-					startYear: Date,
-					endYear: Date,
-				},
 				description: String,
 			},
 		],
