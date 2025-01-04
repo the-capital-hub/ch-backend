@@ -10,7 +10,9 @@ import {
   getCommunityByname,
   getAllCommunities,
   addProductToCommunity,
-  buyProduct
+  buyProduct,
+  createPaymentSession,
+  verifyPayment
 } from "../services/NewCommunityService.js";
 
 export const createCommunityController = async (req, res) => {
@@ -193,6 +195,35 @@ export const buyProductController = async (req, res) => {
     return res.status(500).send({
       status: 500,
       message: "An error occurred while purchasing the product.",
+    });
+  }
+};
+
+export const createPaymentSessionController = async (req, res) => {
+  try {
+    const response = await createPaymentSession(req.body);
+    return res.status(response.status).send(response);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).send({
+      status: 500,
+      message: error.message,
+    });
+  }
+};
+
+export const verifyPaymentController = async (req, res) => {
+  try {
+    const { orderId, entityId, entityType } = req.body;
+    const userData = { userId: req.userId };
+    const response = await verifyPayment(orderId, entityId, entityType, userData);
+    return res.status(response.status).send(response);
+  } catch (error) {
+    console.log(error);
+    
+    return res.status(500).send({
+      status: 500,
+      message: error.message,
     });
   }
 };
