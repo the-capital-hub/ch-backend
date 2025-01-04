@@ -67,7 +67,7 @@ export const getFolderByUser = async (oneLinkId) => {
     const user = await UserModel.findOne({ oneLinkId: oneLinkId });
     const files = await File.find({ userId: user._id });
     const folders = Array.from(new Set(files.map(files => files.folderName)));
-    const defaultFolderNames = ["pitchdeck", "business", "kycdetails", "legal and compliance"];
+    const defaultFolderNames = ["pitchdeck", "business", "kycdetails", "legal and compliance", "onelinkpitch"];
     const allFolderNamesSet = new Set([...defaultFolderNames, ...folders]);
     const allFolderNames = [...allFolderNamesSet];
     return {
