@@ -3,6 +3,9 @@ import { MessageModel } from "../models/Message.js";
 import { UserModel } from "../models/User.js";
 import community_schema from "../models/newCommunity.js";
 import moment from 'moment';
+import { Cashfree } from "cashfree-pg";
+import crypto from "crypto";
+import { v4 as uuidv4 } from "uuid";
 
 export const createCommunity = async (communitydata) => {
   try {
@@ -297,14 +300,6 @@ export const addMembersToCommunity = async (communityId, memberIds) => {
       };
     }
 
-    // Check if the community subscription is 'free'
-    if (community.subscription !== 'free') {
-      return {
-        status: 400,
-        message: "Members cannot be added to a paid community",
-      };
-    }
-
     // Prepare the new members to add to the members array
     const newMembers = memberIds.map(memberId => ({
       member: memberId,
@@ -412,13 +407,6 @@ export const buyProduct = async (userId, productId, communityId) => {
       };
     }
 
-    if (!product.is_free) {
-      return {
-        status: 400,
-        message: "This product is not free"
-      };
-    }
-
     if (product.purchased_by.includes(userId)) {
       return {
         status: 400,
@@ -440,5 +428,79 @@ export const buyProduct = async (userId, productId, communityId) => {
       status: 500,
       message: "An error occurred while purchasing the product"
     };
+  }
+};
+
+// Generate order ID helper function
+async function generateOrderId() {
+  try {
+    const uniqueId = crypto.randomBytes(16).toString("hex");
+    const hash = crypto.createHash("sha256");
+    hash.update(uniqueId);
+    return hash.digest("hex").substr(0, 12);
+  } catch (error) {
+    console.error("Error generating order ID:", error);
+    throw new Error("Failed to generate order ID");
+  }
+}
+
+export const createPaymentSession = async (data) => {
+  try {
+    const orderId = await generateOrderId();
+    const customerId = uuidv4();
+
+    const request = {
+      order_amount: parseFloat(data.amount).toFixed(2),
+      order_currency: "INR",
+      order_id: orderId,
+      customer_details: {
+        customer_id: customerId,
+        customer_name: data.name.trim(),
+        customer_email: data.email.toLowerCase().trim(),
+        customer_phone: data.mobile.trim(),
+      },
+      order_expiry_time: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+    };
+
+    const response = await Cashfree.PGCreateOrder("2023-08-01", request);
+
+    if (!response?.data?.payment_session_id) {
+      throw new Error("Invalid response from payment gateway");
+    }
+
+    return {
+      status: 200,
+      data: response.data,
+    };
+  } catch (error) {
+    console.error("Error in creating payment session:", error);
+    throw new Error(error.message);
+  }
+};
+
+export const verifyPayment = async (orderId, entityId, entityType, userData) => {
+  try {
+    const response = await Cashfree.PGOrderFetchPayments("2023-08-01", orderId);
+    
+    if (!response?.data) {
+      throw new Error("Invalid response from payment gateway");
+    }
+    const paymentStatus = response.data[0].payment_status;
+    const validPaymentStatuses = ["SUCCESS", "FAILED", "PENDING", "USER_DROPPED", "NOT_ATTEMPTED"];
+    return {
+      status: 200,
+      data: {
+        orderId,
+        paymentId: response.data[0].cf_payment_id,
+        amount: response.data[0].payment_amount,
+        currency: response.data[0].payment_currency,
+        status: paymentStatus,
+        isPaymentSuccessful: paymentStatus === "SUCCESS",
+        paymentMethod: response.data[0].payment_group,
+        paymentTime: response.data[0].payment_completion_time,
+      },
+    };
+  } catch (error) {
+    throw new Error(error.message);
   }
 };
