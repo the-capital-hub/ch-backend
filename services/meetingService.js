@@ -438,9 +438,10 @@ export const scheduleMeeting = async (data) => {
 		console.log("Meeting created:", meeting);
 
 		// Update the event model to include the new meeting ID in the bookings array
-		await EventModel.findByIdAndUpdate(data.eventId, {
+		await EventModel.findByIdAndUpdate(data.meetingData.eventId, {
 			$push: { bookings: meeting._id },
 		});
+		console.log("Event updated:", eventData);
 
 		// Return the successful response
 		return {

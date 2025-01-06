@@ -24,6 +24,9 @@ const oAuth2Client = new OAuth2(
 	"https://thecapitalhub.in/investor/onelink"
 );
 
+// Google Calendars scope
+// const SCOPES = ["https://www.googleapis.com/auth/calendar", "https://www.googleapis.com/auth/calendar.events", "https://www.googleapis.com/auth/calendar.calendars"];
+
 export const createWebinar = async (userId, data) => {
 	try {
 		const user = await UserModel.findOne({ _id: userId });
