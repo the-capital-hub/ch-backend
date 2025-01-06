@@ -130,7 +130,7 @@ cron.schedule("0 0 * * *", async () => {
 		console.log(`Expired tokens removed from ${result.modifiedCount} users.`);
 
 		//sending mails to every inactive user, for 7 and 30 days
-		await sendMailtoInactiveFounders();
+		//await sendMailtoInactiveFounders();
 	} catch (error) {
 		console.error("Error removing expired tokens:", error);
 	}

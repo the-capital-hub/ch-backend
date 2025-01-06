@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Member Left Community</title>
+  <style>
+    /* Copy styles from welcomeEmail.ejs */
+  </style>
+</head>
+<body>
+  <div class="container">
+    <img src="https://thecapitalhub.in/static/media/logo-white.c4e4dacf1f6283c93e11.png" alt="CapitalHub Logo">
+    <h2>Community Member Left Notice</h2>
+    
+    <p>Dear Community Admin,</p>
+    
+    <p><%= memberName %> has left the community "<%= communityName %>".</p>
+    
+    <p>Reason provided:</p>
+    <div class="reason-box">
+      <%= reason %>
+    </div>
+    
+    <p>You can review this in your community management dashboard.</p>
+    
+    <a href="https://thecapitalhub.in/community-dashboard" class="cta-button">View Dashboard</a>
+    
+    <p>Best regards,<br>The CapitalHub Team</p>
+  </div>
+</body>
+</html> 

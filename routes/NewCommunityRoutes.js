@@ -13,7 +13,10 @@ import {
   addProductController,
   buyProductController,
   createPaymentSessionController,
-  verifyPaymentController
+  verifyPaymentController,
+  softDeleteCommunityController,
+  removeMemberController,
+  leaveCommunityController
 } from "../controllers/newCommunityController.js";
 
 import { authenticateToken } from "../middlewares/authenticateToken.js";
@@ -35,5 +38,8 @@ router.delete("/deleteCommunity/:communityId", deleteCommunityController);
 router.post("/buyProduct/:communityId/:productId", buyProductController);
 router.post("/create-payment-session", createPaymentSessionController);
 router.post("/verify-payment", verifyPaymentController);
+router.delete('/softDelete/:communityId', authenticateToken, softDeleteCommunityController);
+router.patch('/removeMember/:communityId/:memberId', authenticateToken, removeMemberController);
+router.post('/leaveCommunity/:communityId', authenticateToken, leaveCommunityController);
 
 export default router;
