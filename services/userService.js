@@ -270,6 +270,7 @@ export const getUserEmailById = async (userId) => {
 // Update User
 export const updateUserData = async ({ userId, newData }) => {
 	try {
+		// Handle profile picture upload
 		if (newData?.profilePicture) {
 			const { secure_url } = await cloudinary.uploader.upload(
 				newData.profilePicture,
@@ -281,21 +282,55 @@ export const updateUserData = async ({ userId, newData }) => {
 			);
 			newData.profilePicture = secure_url;
 		}
+
+		// Handle experience logos
+		if (newData?.recentExperience && newData.recentExperience.length > 0) {
+			for (let i = 0; i < newData.recentExperience.length; i++) {
+				const exp = newData.recentExperience[i];
+				if (exp.logo && exp.logo.startsWith("data:image")) {
+					// Check if it's a new image upload
+					const { secure_url } = await cloudinary.uploader.upload(exp.logo, {
+						folder: `${process.env.CLOUDIANRY_FOLDER}/startUps/logos`,
+						format: "webp",
+						unique_filename: true,
+					});
+					newData.recentExperience[i].logo = secure_url;
+				}
+			}
+		}
+
+		// Handle education logos
+		if (newData?.recentEducation && newData.recentEducation.length > 0) {
+			for (let i = 0; i < newData.recentEducation.length; i++) {
+				const edu = newData.recentEducation[i];
+				if (edu.logo && edu.logo.startsWith("data:image")) {
+					// Check if it's a new image upload
+					const { secure_url } = await cloudinary.uploader.upload(edu.logo, {
+						folder: `${process.env.CLOUDIANRY_FOLDER}/startUps/logos`,
+						format: "webp",
+						unique_filename: true,
+					});
+					newData.recentEducation[i].logo = secure_url;
+				}
+			}
+		}
+
 		const data = await UserModel.findByIdAndUpdate(
 			userId,
 			{ ...newData },
 			{ new: true }
 		);
+
 		return {
 			status: 200,
-			message: "User updated succesfully",
+			message: "User updated successfully",
 			data,
 		};
 	} catch (error) {
 		console.log(error);
 		return {
 			status: 500,
-			message: "An error occurred while updating the bio.",
+			message: "An error occurred while updating the user data.",
 		};
 	}
 };
