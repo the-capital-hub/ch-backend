@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Community Member Removal Notice</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      background-color: #f4f4f4;
+      color: #333;
+      padding: 20px;
+    }
+    .container {
+      background-color: #ffffff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    h2 {
+      color: #333;
+      margin-bottom: 20px;
+    }
+    .logo {
+      max-width: 200px;
+      margin-bottom: 20px;
+    }
+    p {
+      font-size: 16px;
+      color: #666;
+      margin-bottom: 15px;
+    }
+    .reason-box {
+      background-color: #f8f9fa;
+      border-left: 4px solid #fd5901;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 4px;
+    }
+    .cta-button {
+      display: inline-block;
+      background: linear-gradient(90deg, #FD5901 0%, #9306FF 100%);
+      color: #fff;
+      text-decoration: none;
+      padding: 12px 25px;
+      border-radius: 5px;
+      margin: 20px 0;
+      font-weight: bold;
+    }
+    .footer {
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid #eee;
+      font-size: 14px;
+      color: #888;
+    }
+    .highlight {
+      color: #fd5901;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <img src="https://thecapitalhub.in/static/media/logo-white.c4e4dacf1f6283c93e11.png" alt="CapitalHub Logo" class="logo">
+    
+    <h2>Community Membership Termination Notice</h2>
+    
+    <p>Dear <%= memberName %>,</p>
+    
+    <p>We regret to inform you that your membership in the community "<span class="highlight"><%= communityName %></span>" has been terminated by the community administrator, <%= adminName %>.</p>
+    
+    <p>Reason for removal:</p>
+    <div class="reason-box">
+      <%= reason %>
+    </div>
+    
+    <p>While we understand this may be disappointing, we encourage you to:</p>
+    <ul>
+      <li>Explore other communities that align with your interests</li>
+      <li>Review our community guidelines for future participation</li>
+      <li>Reach out to our support team if you have any questions</li>
+    </ul>
+
+    <a href="https://thecapitalhub.in/explore-communities" class="cta-button">
+      Explore Other Communities
+    </a>
+
+    <div class="footer">
+      <p>If you believe this action was taken in error, please contact our support team.</p>
+      <p>Best regards,<br>The CapitalHub Team</p>
+    </div>
+  </div>
+</body>
+</html> 

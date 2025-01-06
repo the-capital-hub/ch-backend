@@ -12,7 +12,10 @@ import {
   addProductToCommunity,
   buyProduct,
   createPaymentSession,
-  verifyPayment
+  verifyPayment,
+  removeMember,
+  leaveCommunity,
+  softDeleteCommunity
 } from "../services/NewCommunityService.js";
 
 export const createCommunityController = async (req, res) => {
@@ -224,6 +227,57 @@ export const verifyPaymentController = async (req, res) => {
     return res.status(500).send({
       status: 500,
       message: error.message,
+    });
+  }
+};
+
+export const removeMemberController = async (req, res) => {
+  try {
+    const { communityId, memberId } = req.params;
+    const adminId = req.userId; // Assuming the admin is authenticated and their ID is in req.userId
+    const { reason } = req.body; // Get the reason from the request body
+
+    const response = await removeMember(communityId, adminId, memberId, reason);
+    return res.status(response.status).send(response);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).send({
+      status: 500,
+      message: "An error occurred while removing the member.",
+    });
+  }
+};
+
+export const leaveCommunityController = async (req, res) => {
+  try {
+    const { communityId } = req.params;
+    const userId = req.userId; // Get the user ID from the authenticated request
+    const { reason } = req.body; // Get the reason from the request body
+
+    const response = await leaveCommunity(communityId, userId, reason);
+    return res.status(response.status).send(response);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).send({
+      status: 500,
+      message: "An error occurred while leaving the community.",
+    });
+  }
+};
+
+export const softDeleteCommunityController = async (req, res) => {
+  try {
+    const { communityId } = req.params;
+    const { reason } = req.body; // Get the reason from the request body
+    const userId = req.userId; // Get the user ID from the authenticated request
+
+    const response = await softDeleteCommunity(communityId, userId, reason);
+    return res.status(response.status).send(response);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).send({
+      status: 500,
+      message: "An error occurred while deleting the community.",
     });
   }
 };

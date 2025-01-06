@@ -1619,77 +1619,72 @@ export const updateTopVoice = async (userId) => {
 export const getInactiveFounders = async () => {
 	try {
 		const currentDate = new Date();
-
 		const sevenDaysAgo = new Date(currentDate);
 		sevenDaysAgo.setDate(currentDate.getDate() - 7);
-
 		const thirtyDaysAgo = new Date();
 		thirtyDaysAgo.setDate(new Date().getDate() - 30);
 
+		// Get all startups with their founders
 		const startups = await StartUpModel.find().populate({
 			path: "founderId",
-			select: "companyUpdate email firstName lastName",
-			populate: {
-				path: "companyUpdate",
-				select: "createdAt",
-			},
+			select: "email firstName lastName"
 		});
 
 		const inactiveFounders7Days = [];
 		const inactiveFounders30Days = [];
 
-		startups.forEach((startup) => {
-			if (!startup.founderId) {
-				return;
-			}
+		// Process each startup/founder
+		for (const startup of startups) {
+			if (!startup.founderId) continue;
 
 			const founder = startup.founderId;
-			const companyUpdates = founder.companyUpdate || [];
 
-			if (companyUpdates.length > 0) {
-				companyUpdates.sort(
-					(a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-				);
+			// Get founder's posts
+			const founderPosts = await PostModel.find({
+				user: founder._id
+			}).sort({ createdAt: -1 });
 
-				const latestPostDate = new Date(companyUpdates[0].createdAt);
-
+			if (founderPosts.length > 0) {
+				const latestPostDate = new Date(founderPosts[0].createdAt);
 				const isActiveIn7Days = latestPostDate >= sevenDaysAgo;
-
 				const isActiveIn30Days = latestPostDate >= thirtyDaysAgo;
 
+				// Add to 7-day inactive list if no posts in last 7 days but has posts in last 30 days
 				if (!isActiveIn7Days && isActiveIn30Days) {
-					inactiveFounders30Days.push({
+					inactiveFounders7Days.push({
 						user_first_name: founder.firstName,
 						user_last_name: founder.lastName,
-						user_email: founder.email,
+						user_email: founder.email
 					});
 				}
 
+				// Add to 30-day inactive list if no posts in last 30 days
 				if (!isActiveIn30Days) {
 					inactiveFounders30Days.push({
 						user_first_name: founder.firstName,
 						user_last_name: founder.lastName,
-						user_email: founder.email,
+						user_email: founder.email
 					});
 				}
 			} else {
+				// No posts at all - add to 30-day inactive list
 				inactiveFounders30Days.push({
 					user_first_name: founder.firstName,
 					user_last_name: founder.lastName,
-					user_email: founder.email,
+						user_email: founder.email
 				});
 			}
-		});
+		}
 
 		return {
 			inactiveFounders7Days,
-			inactiveFounders30Days,
+			inactiveFounders30Days
 		};
 	} catch (error) {
 		console.error("Error fetching inactive founders:", error);
 		return {
 			status: 500,
-			message: "Error fetching inactive founders",
+			message: "Error fetching inactive founders"
 		};
 	}
 };
