@@ -25,6 +25,9 @@ import { addMinutes } from "date-fns";
 import nodemailer from "nodemailer";
 import ejs from "ejs";
 import path from "path";
+import { Cashfree } from "cashfree-pg";
+import crypto from "crypto";
+import { v4 as uuidv4 } from "uuid";
 
 const adminMail = "learn.capitalhub@gmail.com";
 import connectDB from "../constants/db.js";
@@ -50,6 +53,7 @@ export const getUsersService = async (info) => {
 
 export const registerUserService = async (user) => {
 	try {
+		console.log(user);
 		const existingUser = await UserModel.findOne({
 			$or: [{ email: user.email }, { phoneNumber: user.phoneNumber }],
 		});
@@ -58,6 +62,7 @@ export const registerUserService = async (user) => {
 		}
 		const newUser = new UserModel(user);
 		await newUser.save();
+		
 
 		const targetUserId = "66823fc5e233b21acca0b471";
 		const targetUser = await UserModel.findById(targetUserId);
@@ -1759,5 +1764,119 @@ export const getUserAvaibility = async (userId) => {
 			status: 500,
 			message: "Error getting user availability",
 		};
+	}
+};
+
+async function generateOrderId() {
+	try {
+		const uniqueId = crypto.randomBytes(16).toString("hex");
+		const hash = crypto.createHash("sha256");
+		hash.update(uniqueId);
+		return hash.digest("hex").substr(0, 12);
+	} catch (error) {
+		console.error("Error generating order ID:", error);
+		throw new Error("Failed to generate order ID");
+	}
+}
+
+export const createSubscriptionPayment = async (userData) => {
+	try {
+		const orderId = await generateOrderId();
+
+		const request = {
+			order_amount: 1999.00, 
+			order_currency: "INR",
+			order_id: orderId,
+			customer_details: {
+				customer_id: userData.firstName + userData.mobileNumber,
+				customer_name: `${userData.firstName} ${userData.lastName}`.trim(),
+				customer_email: userData.email.toLowerCase().trim(),
+				customer_phone: userData.mobileNumber.trim(),
+			},
+			order_expiry_time: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+		};
+
+		const response = await Cashfree.PGCreateOrder("2023-08-01", request);
+
+		return {
+			status: 200,
+			data: {
+				orderId: response.data.order_id,
+				paymentSessionId: response.data.payment_session_id,
+			},
+		};
+	} catch (error) {
+		console.error("Error in creating subscription payment:", error);
+		throw new Error(error.message);
+	}
+};
+
+export const verifySubscriptionPayment = async (orderId, userId) => {
+	try {
+		const response = await Cashfree.PGOrderFetchPayments("2023-08-01", orderId);
+		
+		if (!response?.data) {
+			throw new Error("Invalid response from payment gateway");
+		}
+
+		const paymentStatus = response.data[0].payment_status;
+
+		if (paymentStatus === "SUCCESS") {
+			await UserModel.findByIdAndUpdate(userId, {
+				isSubscribed: true,
+				subscriptionType: "Pro",
+				trialStartDate: new Date(),
+			});
+		}
+
+		return {
+			status: 200,
+			data: {
+				orderId,
+				paymentId: response.data[0].cf_payment_id,
+				amount: response.data[0].payment_amount,
+				currency: response.data[0].payment_currency,
+				status: paymentStatus,
+				isPaymentSuccessful: paymentStatus === "SUCCESS",
+				paymentMethod: response.data[0].payment_group,
+				paymentTime: response.data[0].payment_completion_time,
+			},
+		};
+	} catch (error) {
+		throw new Error(error.message);
+	}
+};
+
+export const createUserAndInitiatePayment = async (userData) => {
+	try {
+		const { firstName, lastName, email, mobileNumber, userType } = userData;
+
+		// Create new user
+		const user = new UserModel({
+			firstName,
+			lastName,
+			email,
+			phoneNumber: mobileNumber,
+			userType,
+			isInvestor: userType === 'investor',
+			userName: `${firstName}.${lastName}`,
+			userStatus: "active"
+		});
+
+		await user.save();
+
+		// Create payment session
+		const paymentResponse = await createSubscriptionPayment(userData);
+		
+		return {
+			status: 200,
+			data: {
+				...paymentResponse.data,
+				userId: user._id
+			}
+		};
+	} catch (error) {
+		console.error(error);
+		throw new Error(error.message);
 	}
 };
