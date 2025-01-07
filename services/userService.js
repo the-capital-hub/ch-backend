@@ -62,7 +62,7 @@ export const registerUserService = async (user) => {
 		}
 		const newUser = new UserModel(user);
 		await newUser.save();
-		
+
 
 		const targetUserId = "66823fc5e233b21acca0b471";
 		const targetUser = await UserModel.findById(targetUserId);
@@ -1782,13 +1782,13 @@ async function generateOrderId() {
 export const createSubscriptionPayment = async (userData) => {
 	try {
 		const orderId = await generateOrderId();
-
+		const mobileNumber = userData.mobileNumber.replace('+91', '');
 		const request = {
 			order_amount: 1999.00, 
 			order_currency: "INR",
 			order_id: orderId,
 			customer_details: {
-				customer_id: userData.firstName + userData.mobileNumber,
+				customer_id: userData.firstName + (mobileNumber? mobileNumber : userData.mobileNumber),
 				customer_name: `${userData.firstName} ${userData.lastName}`.trim(),
 				customer_email: userData.email.toLowerCase().trim(),
 				customer_phone: userData.mobileNumber.trim(),
