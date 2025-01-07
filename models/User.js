@@ -153,6 +153,11 @@ const userSchema = new Schema(
 		isSubscribed: { type: Boolean, default: false },
 		trialStartDate: { type: Date },
 		investorIdCount: [{ type: String }],
+
+		userType: {
+			type: String,
+			enum: ['startup founder', 'startup employee', 'investor', 'vc', 'student'],
+		},
 	},
 	{
 		timestamps: true,

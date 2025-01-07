@@ -40,6 +40,9 @@ import {
 	getInactiveFounders,
 	sendMailtoInactiveFounders,
 	getUserAvaibility,
+	createSubscriptionPayment,
+	verifySubscriptionPayment,
+	createUserAndInitiatePayment,
 } from "../services/userService.js";
 
 import { sendMail } from "../utils/mailHelper.js";
@@ -434,6 +437,7 @@ export const sendOTP = async (req, res) => {
 			message: "OTP Send successfully",
 		});
 	} catch (err) {
+		console.log(err);
 		return res.status(500).json({ error: "Failed to fetch data" });
 	}
 };
@@ -463,6 +467,7 @@ export const verifyOtp = async (req, res) => {
 			throw new Error("OTP Verification failed");
 		}
 	} catch (err) {
+		console.log(err);
 		return res.status(500).json({ error: "Failed to fetch data" });
 	}
 };
@@ -530,6 +535,7 @@ export const registerUserController = async (req, res, next) => {
 			portfolio,
 			chequeSize,
 			linkedin,
+			userType
 		} = req.body;
 
 		const newUser = await registerUserService({
@@ -541,6 +547,7 @@ export const registerUserController = async (req, res, next) => {
 			isInvestor,
 			gender,
 			linkedin,
+			userType
 		});
 
 		const generateUniqueOneLink = async (baseLink, model) => {
@@ -591,36 +598,6 @@ export const registerUserController = async (req, res, next) => {
 					location,
 				}
 			);
-			//  console.log("update")
-			// const emailMessage = `
-			//   A new user has requested for an account:
-
-			//   Investor Details:
-			//   User ID: ${newUser._id}
-			//   Name: ${newUser.firstName} ${newUser.lastName}
-			//   Email: ${newUser.email}
-			//   Mobile: ${phoneNumber}
-			//   Company Name: ${newInvestor.companyName}
-			//   Industry: ${newInvestor.industry}
-			//   Portfolio: ${newInvestor.portfolio}
-			// `;
-			// const subject = "New Account Request";
-			// const adminMail = "investments.capitalhub@gmail.com";
-			// //"learn.capitalhub@gmail.com";
-			// const response = await sendMail(
-			//   newUser.firstName,
-			//   adminMail,
-			//   newUser.email,
-			//   subject,
-			//   emailMessage
-			// );
-			// if (response.status === 200) {
-			//   return res
-			//     .status(200)
-			//     .json({ message: "Investor Added", data: newUser });
-			// } else {
-			//   return res.status(500).json({ message: "Error while sending mail" });
-			// }
 			return res
 				.status(201)
 				.json({ message: "User added successfully", data: newUser });
@@ -672,6 +649,40 @@ export const registerUserController = async (req, res, next) => {
 				.json({ message: "User added successfully", data: newUser, token });
 		}
 	} catch ({ message }) {
+		console.log(message);
+		res.status(409).json({
+			success: false,
+			operational: true,
+			message,
+		});
+	}
+};
+
+export const createUserController = async (req, res, next) => {
+	try {
+		const {
+			firstName,
+			lastName,
+			email,
+			phoneNumber,
+			userType,
+			isInvestor
+		} = req.body;
+
+		const newUser = await registerUserService({
+			firstName,
+			lastName,
+			email,
+			phoneNumber,
+			userType,
+			isInvestor
+		});
+
+		return res
+			.status(201)
+			.json({ message: "User added successfully", data: newUser });
+	} catch ({ message }) {
+		console.log(message);
 		res.status(409).json({
 			success: false,
 			operational: true,
@@ -1366,5 +1377,112 @@ export const sendReportEmail = async (req, res) => {
 		return res
 			.status(500)
 			.send("An error occurred while sending the report email.");
+	}
+};
+
+export const createSubscriptionPaymentController = async (req, res) => {
+	try {
+		const response = await createSubscriptionPayment(req.body);
+		return res.status(response.status).send(response);
+	} catch (error) {
+		console.log(error);
+		return res.status(500).send({
+			status: 500,
+			message: error.message,
+		});
+	}
+};
+
+export const verifySubscriptionPaymentController = async (req, res) => {
+	try {
+		const { orderId } = req.body;
+		const userId = req.userId;
+		const response = await verifySubscriptionPayment(orderId, userId);
+		return res.status(response.status).send(response);
+	} catch (error) {
+		console.log(error);
+		return res.status(500).send({
+			status: 500,
+			message: error.message,
+		});
+	}
+};
+
+export const createUserAndInitiatePaymentController = async (req, res) => {
+	try {
+		const response = await createUserAndInitiatePayment(req.body);
+		return res.status(response.status).send(response);
+	} catch (error) {
+		console.error(error);
+		return res.status(500).send({
+			status: 500,
+			message: error.message,
+		});
+	}
+};
+
+export const registerWithPaymentController = async (req, res) => {
+	try {
+		const { orderId, ...userData } = req.body;
+
+		// Verify payment first
+		const paymentVerification = await verifySubscriptionPayment(orderId);
+		
+		if (!paymentVerification.data.isPaymentSuccessful) {
+			return res.status(400).send({
+				status: 400,
+				message: "Payment verification failed"
+			});
+		}
+
+		// Create user only after payment verification
+		const user = new UserModel({
+			firstName: userData.firstName,
+			lastName: userData.lastName,
+			email: userData.email.toLowerCase(),
+			phoneNumber: userData.mobileNumber,
+			userType: userData.userType,
+			isInvestor: userData.userType === 'investor',
+			userName: `${userData.firstName}.${userData.lastName}`,
+			userStatus: "active",
+			isSubscribed: true,
+			subscriptionType: "Pro",
+			trialStartDate: new Date()
+		});
+
+		await user.save();
+
+		// Generate token
+		const token = jwt.sign(
+			{ userId: user._id, email: user.email },
+			secretKey
+		);
+
+		// Send welcome email
+		const emailContent = await ejs.renderFile("./public/welcomeEmail.ejs", {
+			firstName: userData.firstName,
+		});
+
+		await transporter.sendMail({
+			from: `"The Capital Hub" <${process.env.EMAIL_USER}>`,
+			to: userData.email,
+			subject: "Welcome to CapitalHub!",
+			html: emailContent,
+		});
+
+		return res.status(200).send({
+			status: 200,
+			message: "Registration successful",
+			data: {
+				user,
+				token
+			}
+		});
+	} catch (error) {
+		console.error(error);
+		return res.status(500).send({
+			status: 500,
+			message: error.message
+		});
 	}
 };
