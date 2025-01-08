@@ -15,6 +15,35 @@ function generateRandomNumber() {
 	return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
+// Function to update the total experience field (yearsOfExperience) based on recentExperience
+function calculateTotalExperience(recentExperience) {
+	if (!recentExperience || !recentExperience.length) return 0;
+
+	let totalYears = 0;
+	const currentDate = new Date();
+
+	recentExperience.forEach((exp) => {
+		if (exp.experienceDuration?.startYear && exp.experienceDuration?.endYear) {
+			const startDate = new Date(exp.experienceDuration.startYear);
+			// If endYear is in the future, use current date instead
+			const endDate =
+				new Date(exp.experienceDuration.endYear) > currentDate
+					? currentDate
+					: new Date(exp.experienceDuration.endYear);
+
+			// Calculate the difference in milliseconds
+			const diffTime = endDate - startDate;
+			// Convert to years (including partial years)
+			const years = diffTime / (1000 * 60 * 60 * 24 * 365.25);
+
+			totalYears += Math.max(0, years);
+		}
+	});
+
+	const roundedYears = Math.round(totalYears * 10) / 10;
+	return `${roundedYears} years`;
+}
+
 // Main user schema
 const userSchema = new Schema(
 	{
@@ -39,10 +68,10 @@ const userSchema = new Schema(
 		designation: { type: String },
 		industry: { type: String },
 		yearsOfExperience: { type: String },
-
 		// Experience & Education Details (Legacy fields)
 		experience: { String },
 		education: { type: String, trim: true },
+
 		recentExperience: [
 			{
 				logo: String,
@@ -163,5 +192,32 @@ const userSchema = new Schema(
 		timestamps: true,
 	}
 );
+
+userSchema.pre("save", function (next) {
+	if (this.recentExperience) {
+		this.yearsOfExperience = calculateTotalExperience(
+			this.recentExperience
+		).toString();
+	}
+	next();
+});
+
+userSchema.post(["find", "findOne"], async function (docs) {
+	if (!docs) return;
+
+	const documents = Array.isArray(docs) ? docs : [docs];
+
+	for (const doc of documents) {
+		if (doc && doc.recentExperience) {
+			const newExperience = calculateTotalExperience(
+				doc.recentExperience
+			).toString();
+			if (doc.yearsOfExperience !== newExperience) {
+				doc.yearsOfExperience = newExperience;
+				await doc.save(); // Save the updated document
+			}
+		}
+	}
+});
 
 export const UserModel = model("Users", userSchema);
