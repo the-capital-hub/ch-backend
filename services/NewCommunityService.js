@@ -77,6 +77,29 @@ async function sendMemberLeaveEmail(email, data) {
   }
 }
 
+async function sendPurchaseEmail(email, data, isSuccess = true) {
+  try {
+    const template = isSuccess ? './public/purchaseSuccess.ejs' : './public/purchaseFailed.ejs';
+    const emailContent = await ejs.renderFile(template, {
+      userName: data.userName,
+      communityName: data.communityName,
+      productName: data.productName,
+      productPrice: data.productPrice,
+      purchaseDate: new Date().toLocaleDateString(),
+      errorMessage: data.errorMessage
+    });
+
+    await transporter.sendMail({
+      from: `"The Capital Hub" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: isSuccess ? "Purchase Successful" : "Purchase Failed",
+      html: emailContent,
+    });
+  } catch (error) {
+    console.error("Error sending purchase email:", error);
+  }
+}
+
 export const createCommunity = async (communitydata) => {
   try {
 
@@ -464,6 +487,7 @@ export const addProductToCommunity = async (communityId, productData) => {
 export const buyProduct = async (userId, productId, communityId) => {
   try {
     const community = await community_schema.findById(communityId);
+    const user = await UserModel.findById(userId);
     
     if (!community) {
       return {
@@ -482,6 +506,15 @@ export const buyProduct = async (userId, productId, communityId) => {
     }
 
     if (product.purchased_by.includes(userId)) {
+      // Send failure email
+      await sendPurchaseEmail(user.email, {
+        userName: user.firstName,
+        communityName: community.name,
+        productName: product.name,
+        productPrice: product.price,
+        errorMessage: "Product already purchased"
+      }, false);
+
       return {
         status: 400,
         message: "You have already purchased this product"
@@ -491,6 +524,14 @@ export const buyProduct = async (userId, productId, communityId) => {
     product.purchased_by.push(userId);
     await community.save();
 
+    // Send success email
+    await sendPurchaseEmail(user.email, {
+      userName: user.firstName,
+      communityName: community.name,
+      productName: product.name,
+      productPrice: product.price
+    });
+
     return {
       status: 200,
       message: "Product purchased successfully",
@@ -498,6 +539,18 @@ export const buyProduct = async (userId, productId, communityId) => {
     };
   } catch (error) {
     console.error(error);
+    
+    // Send failure email if user exists
+    if (user) {
+      await sendPurchaseEmail(user.email, {
+        userName: user.firstName,
+        communityName: community?.name || 'Unknown',
+        productName: product?.name || 'Unknown',
+        productPrice: product?.price || 0,
+        errorMessage: "An unexpected error occurred"
+      }, false);
+    }
+
     return {
       status: 500,
       message: "An error occurred while purchasing the product"

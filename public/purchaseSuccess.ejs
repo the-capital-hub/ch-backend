@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Purchase Successful</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      background-color: #f4f4f4;
+      color: #333;
+      padding: 20px;
+    }
+    .container {
+      background-color: #ffffff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    h2 {
+      color: #28a745;
+    }
+    .product-details {
+      margin: 20px 0;
+      padding: 15px;
+      background-color: #f8f9fa;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <img src="https://thecapitalhub.in/static/media/logo-white.c4e4dacf1f6283c93e11.png" alt="Company Logo" style="max-width: 400px; margin-bottom: 20px;">
+    <h2>Purchase Successful!</h2>
+    <p>Dear <%= userName %>,</p>
+    <p>Your purchase in the <%= communityName %> community was successful.</p>
+    
+    <div class="product-details">
+      <p><strong>Product:</strong> <%= productName %></p>
+      <p><strong>Price:</strong> ₹<%= productPrice %></p>
+      <p><strong>Purchase Date:</strong> <%= purchaseDate %></p>
+    </div>
+
+    <p>Thank you for your purchase! If you have any questions, please don't hesitate to contact us.</p>
+
+    <p>Best regards,</p>
+    <p>The CapitalHub Team</p>
+  </div>
+</body>
+</html> 
