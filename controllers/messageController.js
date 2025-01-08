@@ -140,7 +140,7 @@ export const getUnreadMessageCountInCommunitiesController = async (req, res) => 
     } else {
       // Fetch unread count for all chats of the user
       response = await getAllUnreadMessageCountsForUser(userId);
-      console.log("calling controller getAllUnreadMessageCountsForUser");
+      // console.log("calling controller getAllUnreadMessageCountsForUser");
     }
     return res.status(response.status).send(response);
   } catch (error) {

@@ -25,23 +25,38 @@ function calculateTotalExperience(recentExperience) {
 	recentExperience.forEach((exp) => {
 		if (exp.experienceDuration?.startYear && exp.experienceDuration?.endYear) {
 			const startDate = new Date(exp.experienceDuration.startYear);
-			// If endYear is in the future, use current date instead
 			const endDate =
 				new Date(exp.experienceDuration.endYear) > currentDate
 					? currentDate
 					: new Date(exp.experienceDuration.endYear);
 
-			// Calculate the difference in milliseconds
-			const diffTime = endDate - startDate;
-			// Convert to years (including partial years)
-			const years = diffTime / (1000 * 60 * 60 * 24 * 365.25);
-
+			const years = (endDate - startDate) / (1000 * 60 * 60 * 24 * 365.25);
 			totalYears += Math.max(0, years);
 		}
 	});
 
-	const roundedYears = Math.round(totalYears * 10) / 10;
-	return `${roundedYears} years`;
+	return `${Math.round(totalYears * 10) / 10} years`;
+}
+
+function getLatestExperienceDetails(recentExperience) {
+	if (!recentExperience || !recentExperience.length) return null;
+
+	// Sort experiences by endYear in descending order
+	const sortedExperiences = [...recentExperience].sort((a, b) => {
+		const aEnd = a.experienceDuration?.endYear
+			? new Date(a.experienceDuration.endYear)
+			: new Date();
+		const bEnd = b.experienceDuration?.endYear
+			? new Date(b.experienceDuration.endYear)
+			: new Date();
+		return bEnd - aEnd;
+	});
+
+	// Return the latest experience
+	return {
+		companyName: sortedExperiences[0].companyName || "",
+		designation: sortedExperiences[0].role || "",
+	};
 }
 
 // Main user schema
@@ -67,9 +82,9 @@ const userSchema = new Schema(
 		companyName: { type: String, trim: true }, //new field
 		designation: { type: String },
 		industry: { type: String },
-		yearsOfExperience: { type: String },
+		yearsOfExperience: { type: String }, // dynamically updated from recent exp.
 		// Experience & Education Details (Legacy fields)
-		experience: { String },
+		experience: { String }, // industry exp.
 		education: { type: String, trim: true },
 
 		recentExperience: [
@@ -188,31 +203,55 @@ const userSchema = new Schema(
 	}
 );
 
+// Add middleware to track changes in recentExperience
 userSchema.pre("save", function (next) {
-	if (this.recentExperience) {
-		this.yearsOfExperience = calculateTotalExperience(
-			this.recentExperience
-		).toString();
+	// Check if recentExperience is modified
+	if (this.isModified("recentExperience")) {
+		// Calculate total experience
+		this.yearsOfExperience = calculateTotalExperience(this.recentExperience);
+
+		// Update company and designation from latest experience
+		const latestExp = getLatestExperienceDetails(this.recentExperience);
+		if (latestExp) {
+			this.companyName = latestExp.companyName;
+			this.designation = latestExp.designation;
+		}
 	}
 	next();
 });
 
-userSchema.post(["find", "findOne"], async function (docs) {
-	if (!docs) return;
+userSchema.post(
+	["findOneAndUpdate", "updateOne", "updateMany"],
+	async function (doc) {
+		// Only proceed if recentExperience was modified
+		const update = this.getUpdate();
+		if (update && (update.$set?.recentExperience || update.recentExperience)) {
+			const docToUpdate = await this.model.findOne(this.getQuery());
+			if (docToUpdate) {
+				// Calculate new values
+				const yearsExp = calculateTotalExperience(docToUpdate.recentExperience);
+				const latestExp = getLatestExperienceDetails(
+					docToUpdate.recentExperience
+				);
 
-	const documents = Array.isArray(docs) ? docs : [docs];
-
-	for (const doc of documents) {
-		if (doc && doc.recentExperience) {
-			const newExperience = calculateTotalExperience(
-				doc.recentExperience
-			).toString();
-			if (doc.yearsOfExperience !== newExperience) {
-				doc.yearsOfExperience = newExperience;
-				await doc.save(); // Save the updated document
+				// Update all fields in one operation
+				await this.model.updateOne(
+					{ _id: docToUpdate._id },
+					{
+						$set: {
+							yearsOfExperience: yearsExp,
+							companyName: latestExp?.companyName || docToUpdate.companyName,
+							designation: latestExp?.designation || docToUpdate.designation,
+						},
+					}
+				);
 			}
 		}
 	}
-});
+);
+
+// Indexes remain the same
+userSchema.index({ email: 1, userStatus: 1 });
+userSchema.index({ isInvestor: 1, isVc: 1 });
 
 export const UserModel = model("Users", userSchema);

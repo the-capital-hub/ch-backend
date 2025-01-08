@@ -10,6 +10,7 @@ import cron from "node-cron";
 import moment from "moment";
 import nodemailer from "nodemailer";
 import ejs from "ejs";
+import responseTime from "response-time";
 //routes
 import usersData from "./routes/usersData.js";
 import postData from "./routes/postData.js";
@@ -44,6 +45,22 @@ import { sendMailtoInactiveFounders } from "./services/userService.js";
 //model import for cron
 import { UserModel } from "./models/User.js";
 
+// Custom middleware for logging response time and URL
+const logResponseTime = responseTime((req, res, time) => {
+	const timeInSeconds = (time / 1000).toFixed(2); // Convert ms to seconds with 2 decimal places
+	const status = res.statusCode;
+	const logMessage = `${req.method} ${req.url} - Status: ${status} - Response Time: ${timeInSeconds}s`;
+
+	// Color coding based on response time
+	if (time < 100) {
+		console.log("\x1b[32m%s\x1b[0m", logMessage); // Green for fast responses
+	} else if (time < 500) {
+		console.log("\x1b[33m%s\x1b[0m", logMessage); // Yellow for medium responses
+	} else {
+		console.log("\x1b[31m%s\x1b[0m", logMessage); // Red for slow responses
+	}
+});
+
 const allowedOrigins = [
 	"http://localhost:3000",
 	"https://www.thecapitalhub.in",
@@ -56,6 +73,8 @@ app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 app.use(cookieParser());
 app.use(express.static("public"));
 app.use(cors());
+// Add response time middleware before other middleware
+app.use(logResponseTime);
 
 app.use("/users", usersData);
 app.use("/api/posts", postData);

@@ -268,57 +268,202 @@ export const getUserEmailById = async (userId) => {
 };
 
 // Update User
+// export const updateUserData = async ({ userId, newData }) => {
+// 	try {
+// 		// Handle profile picture upload
+// 		if (newData?.profilePicture) {
+// 			const { secure_url } = await cloudinary.uploader.upload(
+// 				newData.profilePicture,
+// 				{
+// 					folder: `${process.env.CLOUDIANRY_FOLDER}/startUps/logos`,
+// 					format: "webp",
+// 					unique_filename: true,
+// 				}
+// 			);
+// 			newData.profilePicture = secure_url;
+// 		}
+
+// 		// Handle experience logos
+// 		if (newData?.recentExperience && newData.recentExperience.length > 0) {
+// 			for (let i = 0; i < newData.recentExperience.length; i++) {
+// 				const exp = newData.recentExperience[i];
+// 				if (exp.logo && exp.logo.startsWith("data:image")) {
+// 					// Check if it's a new image upload
+// 					const { secure_url } = await cloudinary.uploader.upload(exp.logo, {
+// 						folder: `${process.env.CLOUDIANRY_FOLDER}/startUps/logos`,
+// 						format: "webp",
+// 						unique_filename: true,
+// 					});
+// 					newData.recentExperience[i].logo = secure_url;
+// 				}
+// 			}
+// 		}
+
+// 		// Handle education logos
+// 		if (newData?.recentEducation && newData.recentEducation.length > 0) {
+// 			for (let i = 0; i < newData.recentEducation.length; i++) {
+// 				const edu = newData.recentEducation[i];
+// 				if (edu.logo && edu.logo.startsWith("data:image")) {
+// 					// Check if it's a new image upload
+// 					const { secure_url } = await cloudinary.uploader.upload(edu.logo, {
+// 						folder: `${process.env.CLOUDIANRY_FOLDER}/startUps/logos`,
+// 						format: "webp",
+// 						unique_filename: true,
+// 					});
+// 					newData.recentEducation[i].logo = secure_url;
+// 				}
+// 			}
+// 		}
+
+// 		const data = await UserModel.findByIdAndUpdate(
+// 			userId,
+// 			{ ...newData },
+// 			{ new: true }
+// 		);
+
+// 		return {
+// 			status: 200,
+// 			message: "User updated successfully",
+// 			data,
+// 		};
+// 	} catch (error) {
+// 		console.log(error);
+// 		return {
+// 			status: 500,
+// 			message: "An error occurred while updating the user data.",
+// 		};
+// 	}
+// };
+// export const updateUserData = async ({ userId, newData }) => {
+// 	try {
+// 		// Parallelize profile picture upload if it exists
+// 		if (newData?.profilePicture) {
+// 			const profilePictureUpload = cloudinary.uploader.upload(
+// 				newData.profilePicture,
+// 				{
+// 					folder: `${process.env.CLOUDINARY_FOLDER}/startUps/logos`,
+// 					format: "webp",
+// 					unique_filename: true,
+// 				}
+// 			);
+// 			const { secure_url } = await profilePictureUpload;
+// 			newData.profilePicture = secure_url;
+// 		}
+
+// 		// Parallelize recent experience logo uploads
+// 		if (newData?.recentExperience?.length > 0) {
+// 			const experienceUploadPromises = newData.recentExperience.map(
+// 				async (exp, index) => {
+// 					if (exp.logo && exp.logo.startsWith("data:image")) {
+// 						const { secure_url } = await cloudinary.uploader.upload(exp.logo, {
+// 							folder: `${process.env.CLOUDINARY_FOLDER}/startUps/logos`,
+// 							format: "webp",
+// 							unique_filename: true,
+// 						});
+// 						newData.recentExperience[index].logo = secure_url;
+// 					}
+// 				}
+// 			);
+// 			await Promise.all(experienceUploadPromises); // Wait for all experience logo uploads to complete
+// 		}
+
+// 		// Parallelize recent education logo uploads
+// 		if (newData?.recentEducation?.length > 0) {
+// 			const educationUploadPromises = newData.recentEducation.map(
+// 				async (edu, index) => {
+// 					if (edu.logo && edu.logo.startsWith("data:image")) {
+// 						const { secure_url } = await cloudinary.uploader.upload(edu.logo, {
+// 							folder: `${process.env.CLOUDINARY_FOLDER}/startUps/logos`,
+// 							format: "webp",
+// 							unique_filename: true,
+// 						});
+// 						newData.recentEducation[index].logo = secure_url;
+// 					}
+// 				}
+// 			);
+// 			await Promise.all(educationUploadPromises); // Wait for all education logo uploads to complete
+// 		}
+
+// 		// Update user data in the database
+// 		const data = await UserModel.findByIdAndUpdate(
+// 			userId,
+// 			{ ...newData },
+// 			{ new: true }
+// 		);
+
+// 		return {
+// 			status: 200,
+// 			message: "User updated successfully",
+// 			data,
+// 		};
+// 	} catch (error) {
+// 		console.error("Error updating user data:", error);
+// 		return {
+// 			status: 500,
+// 			message: "An error occurred while updating the user data.",
+// 		};
+// 	}
+// };
 export const updateUserData = async ({ userId, newData }) => {
 	try {
-		// Handle profile picture upload
-		if (newData?.profilePicture) {
-			const { secure_url } = await cloudinary.uploader.upload(
-				newData.profilePicture,
-				{
-					folder: `${process.env.CLOUDIANRY_FOLDER}/startUps/logos`,
+		const uploadPromises = [];
+
+		// Helper function to handle image uploads
+		const uploadImage = async (image, folder) => {
+			if (image && image.startsWith("data:image")) {
+				const { secure_url } = await cloudinary.uploader.upload(image, {
+					folder: `${process.env.CLOUDINARY_FOLDER}/${folder}`,
 					format: "webp",
 					unique_filename: true,
-				}
+				});
+				return secure_url;
+			}
+			return image;
+		};
+
+		// Handle profile picture upload
+		if (newData.profilePicture) {
+			uploadPromises.push(
+				uploadImage(newData.profilePicture, "startUps/logos").then((url) => {
+					newData.profilePicture = url;
+				})
 			);
-			newData.profilePicture = secure_url;
 		}
 
-		// Handle experience logos
-		if (newData?.recentExperience && newData.recentExperience.length > 0) {
-			for (let i = 0; i < newData.recentExperience.length; i++) {
-				const exp = newData.recentExperience[i];
-				if (exp.logo && exp.logo.startsWith("data:image")) {
-					// Check if it's a new image upload
-					const { secure_url } = await cloudinary.uploader.upload(exp.logo, {
-						folder: `${process.env.CLOUDIANRY_FOLDER}/startUps/logos`,
-						format: "webp",
-						unique_filename: true,
-					});
-					newData.recentExperience[i].logo = secure_url;
+		// Handle experience logo uploads
+		if (newData.recentExperience?.length > 0) {
+			newData.recentExperience.forEach((exp, index) => {
+				if (exp.logo) {
+					uploadPromises.push(
+						uploadImage(exp.logo, "startUps/logos").then((url) => {
+							newData.recentExperience[index].logo = url;
+						})
+					);
 				}
-			}
+			});
 		}
 
-		// Handle education logos
-		if (newData?.recentEducation && newData.recentEducation.length > 0) {
-			for (let i = 0; i < newData.recentEducation.length; i++) {
-				const edu = newData.recentEducation[i];
-				if (edu.logo && edu.logo.startsWith("data:image")) {
-					// Check if it's a new image upload
-					const { secure_url } = await cloudinary.uploader.upload(edu.logo, {
-						folder: `${process.env.CLOUDIANRY_FOLDER}/startUps/logos`,
-						format: "webp",
-						unique_filename: true,
-					});
-					newData.recentEducation[i].logo = secure_url;
+		// Handle education logo uploads
+		if (newData.recentEducation?.length > 0) {
+			newData.recentEducation.forEach((edu, index) => {
+				if (edu.logo) {
+					uploadPromises.push(
+						uploadImage(edu.logo, "startUps/logos").then((url) => {
+							newData.recentEducation[index].logo = url;
+						})
+					);
 				}
-			}
+			});
 		}
 
+		// Wait for all uploads to complete
+		await Promise.all(uploadPromises);
+
+		// Update user data in the database
 		const data = await UserModel.findByIdAndUpdate(
 			userId,
-			{ ...newData },
-			{ new: true }
+			{ $set: newData },
+			{ new: true, runValidators: true }
 		);
 
 		return {
@@ -327,7 +472,7 @@ export const updateUserData = async ({ userId, newData }) => {
 			data,
 		};
 	} catch (error) {
-		console.log(error);
+		console.error("Error updating user data:", error);
 		return {
 			status: 500,
 			message: "An error occurred while updating the user data.",
