@@ -67,14 +67,15 @@ const allowedOrigins = [
 ];
 
 dotenv.config();
+
+// Add response time middleware before other middleware
+// app.use(logResponseTime);
 const app = express();
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 app.use(cookieParser());
 app.use(express.static("public"));
 app.use(cors());
-// Add response time middleware before other middleware
-app.use(logResponseTime);
 
 app.use("/users", usersData);
 app.use("/api/posts", postData);
