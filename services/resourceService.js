@@ -9,7 +9,7 @@ import { v4 as uuidv4 } from "uuid";
 
 Cashfree.XClientId = process.env.CASHFREE_CLIENT_ID;
 Cashfree.XClientSecret = process.env.CASHFREE_SECRET_KEY;
-Cashfree.XEnvironment = Cashfree.Environment.SANDBOX;
+Cashfree.XEnvironment = Cashfree.Environment.PRODUCTION;
 
 // Create a new resource
 export const create = async (resourceData, files) => {
