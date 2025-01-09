@@ -1,10 +1,7 @@
 import mongoose from "mongoose";
+
 const resourceSchema = new mongoose.Schema(
   {
-    amount: {
-      type: Number,
-      required: true,
-    },
     title: {
       type: String,
       required: true,
@@ -16,14 +13,15 @@ const resourceSchema = new mongoose.Schema(
     link: [{
       type: String,
     }],
+    logoType: {
+      type: String,
+      enum: ['gtm', 'sales', 'pitch', 'financial'],
+      required: true
+    },
     isActive: {
       type: Boolean,
       default: false,
-    },
-    purchased_users: [{
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Users'
-    }]
+    }
   },
   { timestamps: true }
 );
