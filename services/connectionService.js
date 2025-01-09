@@ -355,75 +355,57 @@ export const getRecommendations = async (userId) => {
 				message: "User not found",
 			};
 		}
-		const recommendations = [];
-		const userConnections = user.connections;
-		const userSentConnections = user.connectionsSent || " ";
-		const userReceivedConnections = user.connectionsReceived || " ";
-		for (const connectedUserId of userConnections) {
+
+		// Get users to exclude
+		const excludeUsers = [
+			userId,
+			...(user.connections || []),
+			...(user.connectionsSent || []),
+			...(user.connectionsReceived || [])
+		];
+
+		// First try to get recommendations from connections of connections
+		let recommendations = [];
+		for (const connectedUserId of user.connections) {
 			const connectedUser = await UserModel.findById(connectedUserId);
-
-			if (connectedUser && connectedUser.connections) {
-				const mutualConnections = connectedUser.connections;
-
-				// console.log("User  Connections:", userConnections);
-				// console.log("Connected User ID:", connectedUserId);
-				// console.log("Connected User:", connectedUser);
-				// console.log("Mutual Connections:", mutualConnections);
-
-				for (const connectionId of mutualConnections) {
-					// console.log("Checking Connection ID:", connectionId);
-					// console.log("Is not userId:", connectionId.toString() !== userId);
-					// console.log(
-					// 	"Is not in user connections:",
-					// 	!userConnections.includes(connectionId)
-					// );
-
-					const existsPendingConnections = await ConnectionModel.findOne({
-						$or: [
-							{ sender: userId, receiver: connectionId, status: "pending" },
-							{ sender: connectionId, receiver: userId, status: "pending" },
-						],
-					});
-
-					// console.log(
-					// 	"Exists Pending Connections:",
-					// 	!!existsPendingConnections
-					// );
-
-					if (
-						connectionId.toString() !== userId &&
-						!recommendations.includes(connectionId) &&
-						!userConnections.includes(connectionId) &&
-						!existsPendingConnections
-					) {
-						recommendations.push(connectionId);
-						// console.log("Added to recommendations:", connectionId);
-					}
-				}
+			if (connectedUser?.connections) {
+				recommendations.push(...connectedUser.connections);
 			}
 		}
 
-		if (recommendations.length === 0) {
-			const users = await UserModel.find({
-				_id: {
-					$nin: [
-						...userConnections,
-						userId,
-						...userSentConnections,
-						...userReceivedConnections,
-					],
+		// Filter unique recommendations and remove excluded users
+		recommendations = [...new Set(recommendations)]
+			.filter(id => !excludeUsers.includes(id.toString()));
+
+		// Get user details with posts count
+		let users = [];
+		if (recommendations.length > 0) {
+			users = await UserModel.find(
+				{ 
+					_id: { $in: recommendations },
+					userStatus: "active"
 				},
-				userStatus: "active",
-			});
-			return {
-				status: 200,
-				message: "Recommended User data retrieved successfully",
-				data: users,
-			};
+				"firstName lastName profilePicture designation posts"
+			)
+			.sort({ connections: -1 })  // Sort by number of posts
+			.limit(10);
 		}
-		const users = await UserModel.find({ _id: { $in: recommendations } });
-		// console.log("Final Recommendations:", recommendations);
-		// console.log("Final Users:", users.length);
+
+		// If we don't have enough recommendations, get other active users
+		if (users.length < 5) {
+			const additionalUsers = await UserModel.find(
+				{
+					_id: { $nin: excludeUsers },
+					userStatus: "active"
+				},
+				"firstName lastName profilePicture designation posts"
+			)
+			.sort({ posts: -1 })
+			.limit(10 - users.length);
+
+			users = [...users, ...additionalUsers];
+		}
+
 		return {
 			status: 200,
 			message: "Recommended User data retrieved successfully",

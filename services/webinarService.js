@@ -15,7 +15,7 @@ import { v4 as uuidv4 } from "uuid";
 
 Cashfree.XClientId = process.env.CASHFREE_CLIENT_ID;
 Cashfree.XClientSecret = process.env.CASHFREE_SECRET_KEY;
-Cashfree.XEnvironment = Cashfree.Environment.SANDBOX;
+Cashfree.XEnvironment = Cashfree.Environment.PRODUCTION;
 
 const { OAuth2 } = google.auth;
 const oAuth2Client = new OAuth2(
