@@ -62,7 +62,7 @@ export const create = async (resourceData, files) => {
 
 		const resource = new Resource({
 			...resourceData,
-			link: fileLinks,
+			link: fileLinks.map((link) => ({ url: link })),
 		});
 
 		const savedResource = await resource.save();
