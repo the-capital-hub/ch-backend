@@ -1,5 +1,14 @@
 import mongoose from "mongoose";
 
+const linkSchema = new mongoose.Schema({
+  name: {
+    type: String,
+  },
+  url: {
+    type: String,
+  }
+});
+
 const resourceSchema = new mongoose.Schema(
   {
     title: {
@@ -10,9 +19,7 @@ const resourceSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    link: [{
-      type: String,
-    }],
+      link: [linkSchema],
     logoType: {
       type: String,
       enum: ['gtm', 'sales', 'pitch', 'financial'],
