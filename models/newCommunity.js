@@ -102,6 +102,9 @@ const CommunitySchema = new Schema({
   deleted_at: {
     type: Date
   },
+  whatsapp_group_link: {
+    type: String
+  },
   removed_members: [{
     member: {
       type: Schema.Types.ObjectId,

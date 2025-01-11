@@ -16,7 +16,8 @@ import {
   verifyPaymentController,
   softDeleteCommunityController,
   removeMemberController,
-  leaveCommunityController
+  leaveCommunityController,
+  sendJoinRequestController
 } from "../controllers/newCommunityController.js";
 
 import { authenticateToken } from "../middlewares/authenticateToken.js";
@@ -41,5 +42,6 @@ router.post("/verify-payment", verifyPaymentController);
 router.delete('/softDelete/:communityId', authenticateToken, softDeleteCommunityController);
 router.patch('/removeMember/:communityId/:memberId', authenticateToken, removeMemberController);
 router.post('/leaveCommunity/:communityId', authenticateToken, leaveCommunityController);
+router.post("/sendJoinRequest", sendJoinRequestController);
 
 export default router;
