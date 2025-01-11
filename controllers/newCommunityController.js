@@ -15,7 +15,8 @@ import {
   verifyPayment,
   removeMember,
   leaveCommunity,
-  softDeleteCommunity
+  softDeleteCommunity,
+  sendJoinRequestEmail
 } from "../services/NewCommunityService.js";
 
 export const createCommunityController = async (req, res) => {
@@ -278,6 +279,22 @@ export const softDeleteCommunityController = async (req, res) => {
     return res.status(500).send({
       status: 500,
       message: "An error occurred while deleting the community.",
+    });
+  }
+};
+
+export const sendJoinRequestController = async (req, res) => {
+  try {
+    const response = await sendJoinRequestEmail(req.body);
+    return res.status(200).send({
+      status: 200,
+      message: "Join request sent successfully.",
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).send({
+      status: 500,
+      message: "An error occurred while sending the join request.",
     });
   }
 };

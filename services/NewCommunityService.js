@@ -295,6 +295,7 @@ export const updateCommunity = async (communityId, updatedData) => {
     community.isOpen = updatedData.isOpen || community.isOpen;
     community.about = updatedData.about || community.about;
     community.terms_and_conditions = updatedData.terms_and_conditions || community.terms_and_conditions;
+    community.whatsapp_group_link = updatedData.whatsapp_group_link || community.whatsapp_group_link;
 
     await community.save();
     console.log(community);
@@ -779,4 +780,31 @@ export const leaveCommunity = async (communityId, userId, reason) => {
       message: 'An error occurred while leaving the community'
     };
   }
+};
+
+// Function to send join request email to admin
+export const sendJoinRequestEmail = async (data) => {
+    const transporter = nodemailer.createTransport({
+        service: "gmail",
+        secure: false,
+        auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS,
+        },
+    });
+
+    const emailContent = `
+        <h1>Join WhatsApp Group Request</h1>
+        <p><strong>Name:</strong> ${data.name}</p>
+        <p><strong>Email:</strong> ${data.email}</p>
+        <p><strong>Phone Number:</strong> ${data.phoneNumber}</p>
+        <p><strong>Requested Number:</strong> ${data.requestedNumber}</p>
+    `;
+
+    await transporter.sendMail({
+        from: `"The Capital Hub" <${process.env.EMAIL_USER}>`,
+        to: data.adminEmail,
+        subject: "WhatsApp Group Join Request",
+        html: emailContent,
+    });
 };
