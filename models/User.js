@@ -202,6 +202,10 @@ const userSchema = new Schema(
 			type: String,
 			enum: ['startup founder', 'startup employee', 'investor', 'vc', 'student'],
 		},
+		registeredFrom: {
+			type: String,
+			default: '/signUp',
+		},
 	},
 	{
 		timestamps: true,

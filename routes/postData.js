@@ -29,11 +29,11 @@ import {
 import { authenticateToken } from "../middlewares/authenticateToken.js";
 const router = express.Router();
 
+router.get("/getposts", getAllPosts);
 router.get("/getSinglePost/:id", getSinglePost);
 
 router.use(authenticateToken);
 
-router.get("/getposts", getAllPosts);
 router.get("/get_post_by_id", getPost);
 router.get("/user_post", getUserPost);
 // Single user routes
