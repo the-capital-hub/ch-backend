@@ -105,6 +105,7 @@ export const createUser = async (req, res) => {
 					"_" +
 					Math.floor(Math.random() * Math.pow(10, 4)).toString(),
 				userStatus: "active",
+				registeredFrom: user.registeredFrom,
 			});
 			if (userData._id) {
 				if (user.userType === "Investor") {
@@ -666,7 +667,8 @@ export const createUserController = async (req, res, next) => {
 			email,
 			phoneNumber,
 			userType,
-			isInvestor
+			isInvestor,
+			registeredFrom
 		} = req.body;
 
 		const newUser = await registerUserService({
@@ -675,7 +677,8 @@ export const createUserController = async (req, res, next) => {
 			email,
 			phoneNumber,
 			userType,
-			isInvestor
+			isInvestor,
+			registeredFrom
 		});
 
 		return res
@@ -746,7 +749,9 @@ export const getLinkedInProfile = async (req, res) => {
 	}
 };
 export const loginUserController = async (req, res, next) => {
-	try {
+	try { 
+		
+		console.log(req.body)
 		const { phoneNumber, password } = req.body;
 		const user = await loginUserService({
 			phoneNumber,
