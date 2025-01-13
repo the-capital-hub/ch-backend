@@ -6,6 +6,9 @@ const VCSchema = new Schema(
 			type: String,
 			required: true,
 		},
+		logo: {
+			type: String,
+		},
 		location: {
 			type: String,
 			required: true,
