@@ -751,7 +751,6 @@ export const getLinkedInProfile = async (req, res) => {
 export const loginUserController = async (req, res, next) => {
 	try { 
 		
-		console.log(req.body)
 		const { phoneNumber, password } = req.body;
 		const user = await loginUserService({
 			phoneNumber,
