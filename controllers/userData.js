@@ -1138,6 +1138,7 @@ export const linkedInLoginController = async (req, res) => {
 		// Update user with linkedinId
 		user.linkedinId = linkedinId; // Set the linkedinId
 		user.linkedinTokenExpiryDate = expiryDate;
+		user.linkedinToken = linkedinToken;
 		await user.save(); // Save the updated user record
 
 		const token = jwt.sign(

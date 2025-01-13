@@ -115,6 +115,7 @@ const userSchema = new Schema(
 		linkedinId: { type: String },
 		linkedinTokenExpiryDate: { type: Date },
 		linkedin: { type: String },
+		linkedinToken: { type: String },
 
 		// Connections
 		connections: [{ type: Schema.Types.ObjectId, ref: "Users" }],
