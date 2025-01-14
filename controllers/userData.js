@@ -1491,3 +1491,51 @@ export const registerWithPaymentController = async (req, res) => {
 		});
 	}
 };
+
+export const sendMailOTP = async (req, res) => {
+	try {
+		const { email } = req.body;
+		const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+		// Create a token with OTP and expiry (e.g., 5 minutes)
+		const token = jwt.sign({ otp, email }, process.env.JWT_SECRET_KEY, { expiresIn: '5m' });
+
+		// Send email
+		const emailContent = await ejs.renderFile("./public/otpEmail.ejs", {
+			otp
+		});
+
+		await transporter.sendMail({
+			from: `"The Capital Hub" <${process.env.EMAIL_USER}>`,
+			to: email,
+			subject: "Email Verification OTP",
+			html: emailContent
+		});
+
+		res.status(200).json({ 
+			message: "OTP sent successfully",
+			orderId: token // Send the token as orderId
+		});
+	} catch (error) {
+		console.error("Error sending mail OTP:", error);
+		res.status(500).json({ message: "Error sending OTP" });
+	}
+};
+
+export const verifyMailOTP = async (req, res) => {
+	try {
+		const { otp, orderId } = req.body;
+
+		// Verify the token
+		const decoded = jwt.verify(orderId, process.env.JWT_SECRET_KEY);
+
+		if (decoded.otp === otp) {
+			return res.status(200).json({ message: "OTP verified successfully", success: true });
+		} else {
+			return res.status(400).json({ message: "Invalid OTP", success: false });
+		}
+	} catch (error) {
+		console.error("Error verifying mail OTP:", error);
+		res.status(500).json({ message: "Error verifying OTP", success: false });
+	}
+};
