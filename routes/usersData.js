@@ -51,7 +51,9 @@ import {
 	verifySubscriptionPaymentController,
 	createUserAndInitiatePaymentController,
 	registerWithPaymentController,
-	createUserController
+	createUserController,
+	sendMailOTP,
+	verifyMailOTP
 } from "../controllers/userData.js";
 
 import { authenticateToken } from "../middlewares/authenticateToken.js";
@@ -82,7 +84,8 @@ router.post("/linkdin_login", handelLinkedin);
 router.post("/getLinkedInProfile", getLinkedInProfile);
 router.post("/createUser", registerUserController);
 router.post("/registerUser", createUserController);
-
+router.post("/send-mail-otp", sendMailOTP);
+router.post("/verify-mail-otp", verifyMailOTP);
 router.get("/getUserById/:id", getUserByIdController);
 router.get("/getUserEmail/:userId", getUserEmailByIdController);
 
@@ -160,7 +163,6 @@ router.get("/getUserAvailability", getUserAvaibilityController);
 
 //send report email
 router.post("/report", sendReportEmail);
-
 
 
 export default router;
