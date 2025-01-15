@@ -284,6 +284,7 @@ export const getStartUpById = async (_id) => {
 
 export const getStartupByFounderId = async (founderId) => {
   try {
+    console.log(founderId); 
     const user = await UserModel.findOne({ _id: founderId }).populate(
       "startUp"
     );
@@ -300,20 +301,12 @@ export const getStartupByFounderId = async (founderId) => {
       };
      }
     const startUp = await StartUpModel.findOne({ _id:user.startUp });
-
-    // if (!user.startUp) {
-    //   return {
-    //     status: 404,
-    //     message: "User does not have a startup.",
-    //   };
-    // }
     return {
       status: 200,
       message: "StartUp details retrieved successfully.",
       data: startUp,
     };
   } catch (err) {
-    console.error("Error getting StartUp details:", err);
     return {
       status: 500,
       message: "An error occurred while getting StartUp details.",
@@ -562,5 +555,120 @@ export const deleteUserMilestone = async (oneLinkId, milestoneId) => {
       status: 500,
       message: "An error occurred while deleting user milestoner.",
     };
+  }
+}
+
+export const sendOneLinkRequest = async (startUpId, userId) => {
+  try {
+    const startUp = await StartUpModel.findById(startUpId);
+    if(!startUp){
+      return {
+        status: 404,
+        message: "StartUp not found.",
+      };
+    }
+    const user = await UserModel.findById(userId);
+    if(!user){
+      return {
+        status: 404,
+        message: "User not found.",
+      };
+    }
+    if(!startUp.oneLinkRequest){
+      startUp.oneLinkRequest = [];
+    }
+    if(startUp.oneLinkRequest.some((request) => request.userId.toString() === user._id.toString())){
+      return {
+        status: 400,
+        message: "One Link request already sent.",
+      };
+    }
+    startUp.oneLinkRequest.push({
+      userId: user._id,
+      status: "pending",
+    });
+    await startUp.save();
+
+    return {  
+      status: 200,
+      message: "One Link request sent successfully.",
+    };
+  } catch (error) {
+    console.error("Error sending one link request:", error);
+    return {
+      status: 500,
+      message: "An error occurred while sending one link request.",
+    };
+  }
+}
+
+export const getOneLinkRequest = async (startUpId) => {
+  try {
+    const startUp = await StartUpModel.findById(startUpId);
+    if(!startUp){
+      return {
+        status: 404,
+        message: "StartUp not found.",
+      };
+    }
+    return {
+      status: 200,
+      message: "One Link request retrieved successfully.",
+      data: startUp.oneLinkRequest,
+    };
+  } catch (error) {
+    console.error("Error getting one link request:", error);
+    return {
+      status: 500,
+      message: "An error occurred while getting one link request.",
+    };
+  }
+}
+
+export const approveOneLinkRequest = async (startUpId, userId) => {
+  try {
+    const startUp = await StartUpModel.findById(startUpId);
+    if(!startUp){
+      return {
+        status: 404,
+        message: "StartUp not found.",
+      };
+    }
+    startUp.oneLinkRequest.forEach((request) => {
+      if(request.userId.toString() === userId.toString()){
+        request.status = "approved";
+      }
+    }); 
+    await startUp.save();
+    return {
+      status: 200,
+      message: "One Link request approved successfully.",
+    };
+  } catch (error) {
+    console.error("Error approving one link request:", error);
+  }
+}
+
+export const rejectOneLinkRequest = async (startUpId, userId) => {
+  try {
+    const startUp = await StartUpModel.findById(startUpId);
+    if(!startUp){
+      return {
+        status: 404,
+        message: "StartUp not found.",
+      };
+    }
+    startUp.oneLinkRequest.forEach((request) => { 
+      if(request.userId.toString() === userId.toString()){
+        request.status = "rejected";
+      }
+    });
+    await startUp.save();
+    return {
+      status: 200,
+      message: "One Link request rejected successfully.",
+    };
+  } catch (error) {
+    console.error("Error rejecting one link request:", error);
   }
 }
