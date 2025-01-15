@@ -78,8 +78,9 @@ export const registerUserService = async (user) => {
 		await newUser.save();
 
 		// Send welcome email
-		const emailContent = await ejs.renderFile("./public/welcomeEmail.ejs", {
-			firstName: user.firstName,
+		if(user.email){
+			const emailContent = await ejs.renderFile("./public/welcomeEmail.ejs", {
+			firstName: user.firstName || "New User",
 		});
 
 		await transporter.sendMail({
@@ -88,6 +89,7 @@ export const registerUserService = async (user) => {
 			subject: "Welcome to CapitalHub!",
 			html: emailContent,
 		});
+	}
 
 		return newUser;
 	} catch (error) {
@@ -1396,8 +1398,11 @@ export const googleLogin = async ({
 
 export const googleRegister = async (data) => {
 	try {
-		const user = await UserModel.findOne({ email: data.email });
-		if (user) {
+		// Check for existing user by email or phone number
+		const existingUser = await UserModel.findOne({
+			$or: [{ email: data.email }, { phoneNumber: data.phoneNumber }],
+		});
+		if (existingUser) {
 			return {
 				status: 202,
 				message: "User already exists.",
@@ -1405,6 +1410,21 @@ export const googleRegister = async (data) => {
 		}
 		const newUser = new UserModel(data);
 		await newUser.save();
+
+		// Send welcome email if email is provided
+		if (data.email) {
+			const emailContent = await ejs.renderFile("./public/welcomeEmail.ejs", {
+				firstName: newUser.firstName || "New User",
+			});
+
+			await transporter.sendMail({
+				from: `"The Capital Hub" <${process.env.EMAIL_USER}>`,
+				to: newUser.email,
+				subject: "Welcome to CapitalHub!",
+				html: emailContent,
+			});
+		}
+
 		const token = jwt.sign(
 			{ userId: newUser._id, email: newUser.email },
 			secretKey
@@ -1412,7 +1432,7 @@ export const googleRegister = async (data) => {
 		newUser.password = undefined;
 		return {
 			status: 200,
-			message: "Google Register successfull",
+			message: "Google Register successful",
 			user: newUser,
 			token: token,
 		};
