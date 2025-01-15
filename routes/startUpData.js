@@ -16,7 +16,11 @@ import {
   addMilestoneToUserController,
   getUserMilestonesController,
   deleteUserMilestoneController,
-  deleteStartUpController
+  deleteStartUpController,
+  sendOneLinkRequestController,
+  getOneLinkRequestController,
+  approveOneLinkRequestController,
+  rejectOneLinkRequestController
 } from "../controllers/startUpController.js";
 import { authenticateToken } from "../middlewares/authenticateToken.js";
 
@@ -65,5 +69,10 @@ router.get("/getAllMileStone", getMileStoneController);
 router.post("/addMilestoneToUser", addMilestoneToUserController);
 router.delete("/deleteUserMilestone/:oneLinkId/:milestoneId", deleteUserMilestoneController);
 
+// OneLink Request
+router.post("/sendOneLinkRequest", sendOneLinkRequestController);
+router.get("/getOneLinkRequest/:startUpId", getOneLinkRequestController);
+router.post("/approveOneLinkRequest", approveOneLinkRequestController);
+router.post("/rejectOneLinkRequest", rejectOneLinkRequestController);
 
 export default router;

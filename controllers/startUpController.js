@@ -13,7 +13,11 @@ import {
   addMilestoneToUser,
   getUserMilestones,
   deleteUserMilestone,
-  deleteStartUp
+  deleteStartUp,
+  sendOneLinkRequest,
+  getOneLinkRequest,
+  approveOneLinkRequest,
+  rejectOneLinkRequest
 } from "../services/startUpService.js";
 import { getStartUpData } from "../services/userService.js";
 
@@ -276,4 +280,28 @@ export const deleteUserMilestoneController = async (req, res) => {
       message: "An error occurred while deleting user minestons.",
     });
   }
+};
+
+export const sendOneLinkRequestController = async (req, res) => {
+  const { startUpId, userId } = req.body;
+  const response = await sendOneLinkRequest(startUpId, userId);
+  res.status(response.status).send(response);
+};
+
+export const getOneLinkRequestController = async (req, res) => {
+  const { startUpId } = req.params;
+  const response = await getOneLinkRequest(startUpId);
+  res.status(response.status).send(response);
+};
+
+export const approveOneLinkRequestController = async (req, res) => {
+  const { startUpId, userId } = req.body;
+  const response = await approveOneLinkRequest(startUpId, userId);
+  res.status(response.status).send(response);
+};
+
+export const rejectOneLinkRequestController = async (req, res) => {
+  const { startUpId, userId } = req.body;
+  const response = await rejectOneLinkRequest(startUpId, userId);
+  res.status(response.status).send(response);
 };

@@ -1,5 +1,17 @@
 import { Schema, model } from "mongoose";
 
+const oneLinkRequestSchema = new Schema({
+  userId: {
+    type: Schema.Types.ObjectId,
+    ref: "Users",
+  },
+  status: {
+    type: String,
+    default: "pending",
+    enum: ["pending", "approved", "rejected"],
+  },
+});
+
 const startUpSchema = new Schema(
   {
     colorCard: {
@@ -20,6 +32,7 @@ const startUpSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "Users",
     },
+    oneLinkRequest: [oneLinkRequestSchema],
     introductoryMessage: {
       type: String,
     },
