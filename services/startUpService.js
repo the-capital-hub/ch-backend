@@ -4,7 +4,17 @@ import { InvestorModel } from "../models/Investor.js";
 import { sendMail } from "../utils/mailHelper.js";
 import { cloudinary } from "../utils/uploadImage.js";
 import { MilestoneModel } from "../models/Milestones.js";
+import ejs from "ejs";
+import nodemailer from "nodemailer";
 
+const transporter = nodemailer.createTransport({
+	service: "gmail",
+	secure: false,
+	auth: {
+		user: process.env.EMAIL_USER,
+		pass: process.env.EMAIL_PASS,
+	},
+});
 const adminMail = "learn.capitalhub@gmail.com";
 
 export const createStartup = async (startUpData) => {
@@ -284,7 +294,6 @@ export const getStartUpById = async (_id) => {
 
 export const getStartupByFounderId = async (founderId) => {
   try {
-    console.log(founderId); 
     const user = await UserModel.findOne({ _id: founderId }).populate(
       "startUp"
     );
@@ -300,7 +309,7 @@ export const getStartupByFounderId = async (founderId) => {
          message: "User does not have a startup.",
       };
      }
-    const startUp = await StartUpModel.findOne({ _id:user.startUp });
+    const startUp = await StartUpModel.findOne({ _id:user.startUp }).populate("founderId");
     return {
       status: 200,
       message: "StartUp details retrieved successfully.",
@@ -561,35 +570,43 @@ export const deleteUserMilestone = async (oneLinkId, milestoneId) => {
 export const sendOneLinkRequest = async (startUpId, userId) => {
   try {
     const startUp = await StartUpModel.findById(startUpId);
-    if(!startUp){
-      return {
-        status: 404,
-        message: "StartUp not found.",
-      };
-    }
     const user = await UserModel.findById(userId);
-    if(!user){
+    const founder = await UserModel.findById(startUp.founderId);
+
+    if (!startUp || !user || !founder) {
       return {
         status: 404,
-        message: "User not found.",
+        message: "StartUp, User or Founder not found.",
       };
     }
-    if(!startUp.oneLinkRequest){
+
+    // Send email to founder
+    const emailContent = await ejs.renderFile("./public/oneLinkRequest.ejs", {
+      userName: `${user.firstName} ${user.lastName}`,
+      userEmail: user.email,
+      userPhone: user.phoneNumber,
+    });
+
+    await transporter.sendMail({
+      from: `"The Capital Hub" <${process.env.EMAIL_USER}>`,
+      to: founder.email,
+      subject: "New OneLink Access Request",
+      html: emailContent,
+    });
+
+    // Add request to startup
+    if (!startUp.oneLinkRequest) {
       startUp.oneLinkRequest = [];
     }
-    if(startUp.oneLinkRequest.some((request) => request.userId.toString() === user._id.toString())){
-      return {
-        status: 400,
-        message: "One Link request already sent.",
-      };
-    }
+
     startUp.oneLinkRequest.push({
       userId: user._id,
       status: "pending",
     });
+
     await startUp.save();
 
-    return {  
+    return {
       status: 200,
       message: "One Link request sent successfully.",
     };
@@ -600,11 +617,17 @@ export const sendOneLinkRequest = async (startUpId, userId) => {
       message: "An error occurred while sending one link request.",
     };
   }
-}
+};
 
 export const getOneLinkRequest = async (startUpId) => {
   try {
-    const startUp = await StartUpModel.findById(startUpId);
+    const startUp = await StartUpModel.findById(startUpId).populate({
+        path: "oneLinkRequest.userId",
+        populate: [
+            { path: "investor" },
+            { path: "startUp" }
+        ]
+    });
     if(!startUp){
       return {
         status: 404,
@@ -625,7 +648,7 @@ export const getOneLinkRequest = async (startUpId) => {
   }
 }
 
-export const approveOneLinkRequest = async (startUpId, userId) => {
+export const approveOneLinkRequest = async (startUpId, requestId) => {
   try {
     const startUp = await StartUpModel.findById(startUpId);
     if(!startUp){
@@ -635,7 +658,7 @@ export const approveOneLinkRequest = async (startUpId, userId) => {
       };
     }
     startUp.oneLinkRequest.forEach((request) => {
-      if(request.userId.toString() === userId.toString()){
+      if(request._id.toString() === requestId.toString()){
         request.status = "approved";
       }
     }); 
@@ -649,7 +672,7 @@ export const approveOneLinkRequest = async (startUpId, userId) => {
   }
 }
 
-export const rejectOneLinkRequest = async (startUpId, userId) => {
+export const rejectOneLinkRequest = async (startUpId, requestId) => {
   try {
     const startUp = await StartUpModel.findById(startUpId);
     if(!startUp){
@@ -659,7 +682,7 @@ export const rejectOneLinkRequest = async (startUpId, userId) => {
       };
     }
     startUp.oneLinkRequest.forEach((request) => { 
-      if(request.userId.toString() === userId.toString()){
+      if(request._id.toString() === requestId.toString()){
         request.status = "rejected";
       }
     });
