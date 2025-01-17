@@ -43,6 +43,8 @@ import {
 	createSubscriptionPayment,
 	verifySubscriptionPayment,
 	createUserAndInitiatePayment,
+	getRawUsers,
+	getRawUserById
 } from "../services/userService.js";
 
 import { sendMail } from "../utils/mailHelper.js";
@@ -1070,8 +1072,8 @@ export const googleLoginController = async (req, res) => {
 export const googleRegisterController = async (req, res) => {
 	try {
 		const { credential } = req.body;
-		console.log("credential", credential);
 		const response = await googleRegister(credential);
+		console.log("response", response);
 		res.status(response.status).send(response);
 	} catch (error) {
 		console.error(error);
@@ -1537,5 +1539,26 @@ export const verifyMailOTP = async (req, res) => {
 	} catch (error) {
 		console.error("Error verifying mail OTP:", error);
 		res.status(500).json({ message: "Error verifying OTP", success: false });
+	}
+};
+
+export const getRawUsersController = async (req, res) => {
+	try {
+		const response = await getRawUsers();
+		return res.status(200).send(response);
+	} catch (error) {
+		console.error(error);
+		return res.status(500).send({ status: 500, message: error.message });
+	}
+};
+
+export const getRawUserByIdController = async (req, res) => {
+	try {
+		const { userId } = req.params;
+		const response = await getRawUserById(userId);
+		return res.status(200).send(response);
+	} catch (error) {
+		console.error(error);
+		return res.status(500).send({ status: 500, message: error.message });
 	}
 };

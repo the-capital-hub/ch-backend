@@ -53,7 +53,9 @@ import {
 	registerWithPaymentController,
 	createUserController,
 	sendMailOTP,
-	verifyMailOTP
+	verifyMailOTP,
+	getRawUsersController,
+	getRawUserByIdController
 } from "../controllers/userData.js";
 
 import { authenticateToken } from "../middlewares/authenticateToken.js";
@@ -88,7 +90,8 @@ router.post("/send-mail-otp", sendMailOTP);
 router.post("/verify-mail-otp", verifyMailOTP);
 router.get("/getUserById/:id", getUserByIdController);
 router.get("/getUserEmail/:userId", getUserEmailByIdController);
-
+router.get("/getRawUsers", getRawUsersController);
+router.get("/getRawUserById/:userId", getRawUserByIdController);
 router.patch("/updateUserById/:userId", updateUserByIdController);
 
 router.post("/requestPasswordReset", requestPasswordResetController);
