@@ -179,7 +179,6 @@ const userSchema = new Schema(
 			type: String,
 			default: generateRandomNumber,
 			unique: true,
-			required: true,
 		},
 		secretKey: { type: String },
 		isAdmin: { type: Boolean, default: false },
@@ -201,7 +200,7 @@ const userSchema = new Schema(
 
 		userType: {
 			type: String,
-			enum: ['startup founder', 'startup employee', 'investor', 'vc', 'student'],
+			enum: ['startup founder', 'startup employee', 'investor', 'vc', 'student', 'raw']
 		},
 		registeredFrom: {
 			type: String,

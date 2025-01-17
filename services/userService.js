@@ -1398,16 +1398,66 @@ export const googleLogin = async ({
 
 export const googleRegister = async (data) => {
 	try {
+
+		let existingUser;
 		// Check for existing user by email or phone number
-		const existingUser = await UserModel.findOne({
-			$or: [{ email: data.email }, { phoneNumber: data.phoneNumber }],
-		});
-		if (existingUser) {
-			return {
-				status: 202,
-				message: "User already exists.",
-			};
+		if(data.email){
+			existingUser = await UserModel.findOne({ email: data.email });
 		}
+		if(data.phoneNumber){
+			existingUser = await UserModel.findOne({ phoneNumber: data.phoneNumber });
+		}
+		
+		// Check if the existing user is of type 'raw'
+		if (existingUser) {
+			if (existingUser.userType === "raw") {
+				console.log("raw");
+				// Merge previous data with new data
+				const mergedData = {
+					...existingUser.toObject(), // Convert existing user to plain object
+					...data, // Merge with new data
+				};
+				// Delete the existing user
+				await UserModel.deleteOne({ _id: existingUser._id });
+				// Create a new user with merged data
+				const newUser = new UserModel(mergedData);
+				await newUser.save();
+
+				// Send welcome email if email is provided
+				if (newUser.email) {
+					const emailContent = await ejs.renderFile("./public/welcomeEmail.ejs", {
+						firstName: newUser.firstName || "New User",
+					});
+
+					await transporter.sendMail({
+						from: `"The Capital Hub" <${process.env.EMAIL_USER}>`,
+						to: newUser.email,
+						subject: "Welcome to CapitalHub!",
+						html: emailContent,
+					});
+				}
+
+				const token = jwt.sign(
+					{ userId: newUser._id, email: newUser.email },
+					secretKey
+				);
+				newUser.password = undefined;
+				return {
+					status: 200,
+					message: "Google Register successful",
+					user: newUser,
+					token: token,
+				};
+			} else {
+				// If user is not of type 'raw', return a message indicating user already exists
+				return {
+					status: 202,
+					message: "User already exists.",
+				};
+			}
+		}
+
+		// If no existing user, proceed with normal registration
 		const newUser = new UserModel(data);
 		await newUser.save();
 
@@ -2076,6 +2126,26 @@ export const createUserAndInitiatePayment = async (userData) => {
 			}
 		};
 	} catch (error) {
+		console.error(error);
+		throw new Error(error.message);
+	}
+};
+
+export const getRawUsers = async () => {
+	try{
+		const rawUsers = await UserModel.find({userType: "raw"});
+		return rawUsers;
+	}catch(error){
+		console.error(error);
+		throw new Error(error.message);
+	}
+};
+
+export const getRawUserById = async (userId) => {
+	try{
+		const rawUser = await UserModel.findOne({_id: userId, userType: "raw"});
+		return rawUser;
+	}catch(error){
 		console.error(error);
 		throw new Error(error.message);
 	}
