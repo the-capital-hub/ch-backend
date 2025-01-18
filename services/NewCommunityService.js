@@ -411,7 +411,7 @@ export const addMembersToCommunity = async (communityId, memberIds) => {
     ];
 
     community.members = Array.from(
-      new Map(community.members.map(item => [item.member.toString(), item])).values()
+      new Map(community.members.map(item => [item.member, item])).values()
     );
 
     // Save the community document after modifying the members array
