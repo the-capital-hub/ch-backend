@@ -1073,7 +1073,6 @@ export const googleRegisterController = async (req, res) => {
 	try {
 		const { credential } = req.body;
 		const response = await googleRegister(credential);
-		console.log("response", response);
 		res.status(response.status).send(response);
 	} catch (error) {
 		console.error(error);
