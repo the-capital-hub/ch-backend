@@ -178,6 +178,9 @@ export const getUserByUsername = async (username) => {
 			};
 		}
 
+		// Set email to undefined
+		user.email = undefined;
+
 		return {
 			status: 200,
 			user: user,
