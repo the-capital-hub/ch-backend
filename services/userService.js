@@ -41,14 +41,26 @@ const transporter = nodemailer.createTransport({
 	},
 });
 
-export const getUsersService = async (info) => {
-	try {
-		const products = await UserModel.find({}).toArray();
-		return products;
-	} catch (error) {
-		console.error("Failed to fetch data:", error);
-		return [];
-	}
+//changed on 18-01-2025
+// export const getUsersService = async (info) => {
+// 	try {
+// 		const products = await UserModel.find({}).toArray();
+// 		return products;
+// 	} catch (error) {
+// 		console.error("Failed to fetch data:", error);
+// 		return [];
+// 	}
+// };
+
+export const getUsersService = async () => {
+    try {
+        // Fetch all user documents
+        const users = await UserModel.find({});
+        return users;
+    } catch (error) {
+        console.error("Failed to fetch data:", error);
+        return [];
+    }
 };
 
 export const registerUserService = async (user) => {
