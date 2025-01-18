@@ -1408,16 +1408,34 @@ export const googleLogin = async ({
 	}
 };
 
-export const googleRegister = async (data) => {
+export const googleRegister = async (userData) => {
 	try {
+		let profileImage;
+		
+		if (userData?.profilePicture) {
+			// If user provided an image, upload to cloudinary
+			const { secure_url } = await cloudinary.uploader.upload(userData.profilePicture, {
+				folder: `${process.env.CLOUDIANRY_FOLDER}/users/profilePictures`,
+				format: "webp",
+				unique_filename: true,
+			});
+			profileImage = secure_url;
+		} else {
+			// If no image provided, use random default image
+			const randomNum = Math.floor(Math.random() * 4) + 1; // Random number between 1-4
+			profileImage = `https://ch-social-link-logo.s3.ap-south-1.amazonaws.com/image-${randomNum}.png`;
+		}
+
+		// Add the profile image to user data
+		userData.profilePicture = profileImage;
 
 		let existingUser;
 		// Check for existing user by email or phone number
-		if(data.email){
-			existingUser = await UserModel.findOne({ email: data.email });
+		if(userData.email){
+			existingUser = await UserModel.findOne({ email: userData.email });
 		}
-		if(data.phoneNumber){
-			existingUser = await UserModel.findOne({ phoneNumber: data.phoneNumber });
+		if(userData.phoneNumber){
+			existingUser = await UserModel.findOne({ phoneNumber: userData.phoneNumber });
 		}
 		
 		// Check if the existing user is of type 'raw'
@@ -1427,7 +1445,7 @@ export const googleRegister = async (data) => {
 				// Merge previous data with new data
 				const mergedData = {
 					...existingUser.toObject(), // Convert existing user to plain object
-					...data, // Merge with new data
+					...userData, // Merge with new data
 				};
 				// Delete the existing user
 				await UserModel.deleteOne({ _id: existingUser._id });
@@ -1470,11 +1488,11 @@ export const googleRegister = async (data) => {
 		}
 
 		// If no existing user, proceed with normal registration
-		const newUser = new UserModel(data);
+		const newUser = new UserModel(userData);
 		await newUser.save();
 
 		// Send welcome email if email is provided
-		if (data.email) {
+		if (userData.email) {
 			const emailContent = await ejs.renderFile("./public/welcomeEmail.ejs", {
 				firstName: newUser.firstName || "New User",
 			});
@@ -1499,11 +1517,8 @@ export const googleRegister = async (data) => {
 			token: token,
 		};
 	} catch (error) {
-		console.error("Error Register:", error);
-		return {
-			status: 500,
-			message: "An error occurred while registering using google.",
-		};
+		console.error("Error in Google registration:", error);
+		throw error;
 	}
 };
 
