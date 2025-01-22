@@ -91,6 +91,31 @@ const CommunitySchema = new Schema({
   ],
   terms_and_conditions: [{
     type: String
+  }],
+  is_deleted: {
+    type: Boolean,
+    default: false
+  },
+  deletion_reason: {
+    type: String
+  },
+  deleted_at: {
+    type: Date
+  },
+  whatsapp_group_link: {
+    type: String
+  },
+  removed_members: [{
+    member: {
+      type: Schema.Types.ObjectId,
+      ref: 'Users'
+    },
+    reason: String,
+    removed_at: Date,
+    removed_by: {
+      type: Schema.Types.ObjectId,
+      ref: 'Users'
+    }
   }]
 },
 {

@@ -4,7 +4,17 @@ import { InvestorModel } from "../models/Investor.js";
 import { sendMail } from "../utils/mailHelper.js";
 import { cloudinary } from "../utils/uploadImage.js";
 import { MilestoneModel } from "../models/Milestones.js";
+import ejs from "ejs";
+import nodemailer from "nodemailer";
 
+const transporter = nodemailer.createTransport({
+	service: "gmail",
+	secure: false,
+	auth: {
+		user: process.env.EMAIL_USER,
+		pass: process.env.EMAIL_PASS,
+	},
+});
 const adminMail = "learn.capitalhub@gmail.com";
 
 export const createStartup = async (startUpData) => {
@@ -299,21 +309,13 @@ export const getStartupByFounderId = async (founderId) => {
          message: "User does not have a startup.",
       };
      }
-    const startUp = await StartUpModel.findOne({ _id:user.startUp });
-
-    // if (!user.startUp) {
-    //   return {
-    //     status: 404,
-    //     message: "User does not have a startup.",
-    //   };
-    // }
+    const startUp = await StartUpModel.findOne({ _id:user.startUp }).populate("founderId");
     return {
       status: 200,
       message: "StartUp details retrieved successfully.",
       data: startUp,
     };
   } catch (err) {
-    console.error("Error getting StartUp details:", err);
     return {
       status: 500,
       message: "An error occurred while getting StartUp details.",
@@ -562,5 +564,134 @@ export const deleteUserMilestone = async (oneLinkId, milestoneId) => {
       status: 500,
       message: "An error occurred while deleting user milestoner.",
     };
+  }
+}
+
+export const sendOneLinkRequest = async (startUpId, userId) => {
+  try {
+    const startUp = await StartUpModel.findById(startUpId);
+    const user = await UserModel.findById(userId);
+    const founder = await UserModel.findById(startUp.founderId);
+
+    if (!startUp || !user || !founder) {
+      return {
+        status: 404,
+        message: "StartUp, User or Founder not found.",
+      };
+    }
+
+    // Send email to founder
+    const emailContent = await ejs.renderFile("./public/oneLinkRequest.ejs", {
+      userName: `${user.firstName} ${user.lastName}`,
+      userEmail: user.email,
+      userPhone: user.phoneNumber,
+    });
+
+    await transporter.sendMail({
+      from: `"The Capital Hub" <${process.env.EMAIL_USER}>`,
+      to: founder.email,
+      subject: "New OneLink Access Request",
+      html: emailContent,
+    });
+
+    // Add request to startup
+    if (!startUp.oneLinkRequest) {
+      startUp.oneLinkRequest = [];
+    }
+
+    startUp.oneLinkRequest.push({
+      userId: user._id,
+      status: "pending",
+    });
+
+    await startUp.save();
+
+    return {
+      status: 200,
+      message: "One Link request sent successfully.",
+    };
+  } catch (error) {
+    console.error("Error sending one link request:", error);
+    return {
+      status: 500,
+      message: "An error occurred while sending one link request.",
+    };
+  }
+};
+
+export const getOneLinkRequest = async (startUpId) => {
+  try {
+    const startUp = await StartUpModel.findById(startUpId).populate({
+        path: "oneLinkRequest.userId",
+        populate: [
+            { path: "investor" },
+            { path: "startUp" }
+        ]
+    });
+    if(!startUp){
+      return {
+        status: 404,
+        message: "StartUp not found.",
+      };
+    }
+    return {
+      status: 200,
+      message: "One Link request retrieved successfully.",
+      data: startUp.oneLinkRequest,
+    };
+  } catch (error) {
+    console.error("Error getting one link request:", error);
+    return {
+      status: 500,
+      message: "An error occurred while getting one link request.",
+    };
+  }
+}
+
+export const approveOneLinkRequest = async (startUpId, requestId) => {
+  try {
+    const startUp = await StartUpModel.findById(startUpId);
+    if(!startUp){
+      return {
+        status: 404,
+        message: "StartUp not found.",
+      };
+    }
+    startUp.oneLinkRequest.forEach((request) => {
+      if(request._id.toString() === requestId.toString()){
+        request.status = "approved";
+      }
+    }); 
+    await startUp.save();
+    return {
+      status: 200,
+      message: "One Link request approved successfully.",
+    };
+  } catch (error) {
+    console.error("Error approving one link request:", error);
+  }
+}
+
+export const rejectOneLinkRequest = async (startUpId, requestId) => {
+  try {
+    const startUp = await StartUpModel.findById(startUpId);
+    if(!startUp){
+      return {
+        status: 404,
+        message: "StartUp not found.",
+      };
+    }
+    startUp.oneLinkRequest.forEach((request) => { 
+      if(request._id.toString() === requestId.toString()){
+        request.status = "rejected";
+      }
+    });
+    await startUp.save();
+    return {
+      status: 200,
+      message: "One Link request rejected successfully.",
+    };
+  } catch (error) {
+    console.error("Error rejecting one link request:", error);
   }
 }

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Email Verification OTP</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      background-color: #f4f4f4;
+      color: #333;
+      padding: 20px;
+    }
+    .container {
+      background-color: #ffffff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      text-align: center;
+    }
+    h2 {
+      color: #333;
+    }
+    .otp-box {
+      font-size: 32px;
+      font-weight: bold;
+      color: #fd5901;
+      padding: 20px;
+      background-color: #f8f8f8;
+      border-radius: 8px;
+      margin: 20px 0;
+      letter-spacing: 4px;
+    }
+    p {
+      font-size: 16px;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <img src="https://thecapitalhub.in/static/media/logo-white.c4e4dacf1f6283c93e11.png" alt="CapitalHub Logo" style="max-width: 400px; margin-bottom: 20px;">
+    <h2>Email Verification OTP</h2>
+    
+    <p>Please use the following OTP to verify your email address:</p>
+    
+    <div class="otp-box">
+      <%= otp %>
+    </div>
+
+    <p>This OTP will expire in 10 minutes.</p>
+    <p>If you didn't request this OTP, please ignore this email.</p>
+
+    <p>Best regards,<br>The CapitalHub Team</p>
+  </div>
+</body>
+</html> 

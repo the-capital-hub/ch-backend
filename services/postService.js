@@ -106,7 +106,7 @@ export const allPostsData = async (page, perPage) => {
 			.populate({
 				path: "user",
 				select:
-					"firstName lastName designation profilePicture investor startUp oneLinkId isSubscribed isTopVoice",
+					"firstName lastName designation profilePicture location investor startUp oneLinkId isSubscribed isTopVoice",
 				populate: [
 					{
 						path: "investor",

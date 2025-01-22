@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OneLink Access Request</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      background-color: #f4f4f4;
+      color: #333;
+      padding: 20px;
+    }
+    .container {
+      background-color: #ffffff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    h2 {
+      color: #333;
+    }
+    p {
+      font-size: 16px;
+      color: #666;
+    }
+    .user-details {
+      background-color: #f8f9fa;
+      padding: 15px;
+      border-radius: 5px;
+      margin: 20px 0;
+    }
+    .cta-button {
+      background-color: #fd5901;
+      color: #fff;
+      text-decoration: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      display: inline-block;
+      margin: 20px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <img src="https://thecapitalhub.in/static/media/logo-white.c4e4dacf1f6283c93e11.png" alt="CapitalHub Logo" style="max-width: 400px; margin-bottom: 20px;">
+    <h2>New OneLink Access Request</h2>
+    
+    <p>You have received a new OneLink access request for your startup.</p>
+    
+    <div class="user-details">
+      <h3>User Details:</h3>
+      <p><strong>Name:</strong> <%= userName %></p>
+      <p><strong>Email:</strong> <%= userEmail %></p>
+      <p><strong>Phone:</strong> <%= userPhone %></p>
+    </div>
+
+    <p>You can manage this request from your dashboard:</p>
+    
+    <a href="https://thecapitalhub.in/company-profile" class="cta-button">View Request</a>
+    
+    <p>Best regards,<br>The CapitalHub Team</p>
+  </div>
+</body>
+</html> 

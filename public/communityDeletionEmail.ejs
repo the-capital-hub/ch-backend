@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Community Deletion Notice</title>
+  <style>
+    /* Copy styles from welcomeEmail.ejs and modify as needed */
+  </style>
+</head>
+<body>
+  <div class="container">
+    <img src="https://thecapitalhub.in/static/media/logo-white.c4e4dacf1f6283c93e11.png" alt="CapitalHub Logo">
+    <h2>Community Deletion Notice</h2>
+    
+    <p>Dear <%= memberName %>,</p>
+    
+    <p>We regret to inform you that the community "<%= communityName %>" has been deleted by <%= adminName %>.</p>
+    
+    <p>Reason for deletion:</p>
+    <div class="reason-box">
+      <%= reason %>
+    </div>
+    
+    <p>We encourage you to explore other communities on CapitalHub that align with your interests.</p>
+    
+    <a href="https://thecapitalhub.in/explore-communities" class="cta-button">Explore Communities</a>
+    
+    <p>If you have any questions, please don't hesitate to contact us.</p>
+    
+    <p>Best regards,<br>The CapitalHub Team</p>
+  </div>
+</body>
+</html> 

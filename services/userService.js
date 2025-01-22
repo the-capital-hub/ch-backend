@@ -25,6 +25,9 @@ import { addMinutes } from "date-fns";
 import nodemailer from "nodemailer";
 import ejs from "ejs";
 import path from "path";
+import { Cashfree } from "cashfree-pg";
+import crypto from "crypto";
+import { v4 as uuidv4 } from "uuid";
 
 const adminMail = "learn.capitalhub@gmail.com";
 import connectDB from "../constants/db.js";
@@ -38,18 +41,31 @@ const transporter = nodemailer.createTransport({
 	},
 });
 
-export const getUsersService = async (info) => {
-	try {
-		const products = await UserModel.find({}).toArray();
-		return products;
-	} catch (error) {
-		console.error("Failed to fetch data:", error);
-		return [];
-	}
+//changed on 18-01-2025
+// export const getUsersService = async (info) => {
+// 	try {
+// 		const products = await UserModel.find({}).toArray();
+// 		return products;
+// 	} catch (error) {
+// 		console.error("Failed to fetch data:", error);
+// 		return [];
+// 	}
+// };
+
+export const getUsersService = async () => {
+    try {
+        // Fetch all user documents
+        const users = await UserModel.find({});
+        return users;
+    } catch (error) {
+        console.error("Failed to fetch data:", error);
+        return [];
+    }
 };
 
 export const registerUserService = async (user) => {
 	try {
+		console.log(user);
 		const existingUser = await UserModel.findOne({
 			$or: [{ email: user.email }, { phoneNumber: user.phoneNumber }],
 		});
@@ -58,6 +74,7 @@ export const registerUserService = async (user) => {
 		}
 		const newUser = new UserModel(user);
 		await newUser.save();
+
 
 		const targetUserId = "66823fc5e233b21acca0b471";
 		const targetUser = await UserModel.findById(targetUserId);
@@ -73,8 +90,9 @@ export const registerUserService = async (user) => {
 		await newUser.save();
 
 		// Send welcome email
-		const emailContent = await ejs.renderFile("./public/welcomeEmail.ejs", {
-			firstName: user.firstName,
+		if(user.email){
+			const emailContent = await ejs.renderFile("./public/welcomeEmail.ejs", {
+			firstName: user.firstName || "New User",
 		});
 
 		await transporter.sendMail({
@@ -83,6 +101,7 @@ export const registerUserService = async (user) => {
 			subject: "Welcome to CapitalHub!",
 			html: emailContent,
 		});
+	}
 
 		return newUser;
 	} catch (error) {
@@ -1392,17 +1411,103 @@ export const googleLogin = async ({
 	}
 };
 
-export const googleRegister = async (data) => {
+export const googleRegister = async (userData) => {
 	try {
-		const user = await UserModel.findOne({ email: data.email });
-		if (user) {
-			return {
-				status: 202,
-				message: "User already exists.",
-			};
+		let profileImage;
+		
+		if (userData?.profilePicture) {
+			// If user provided an image, upload to cloudinary
+			const { secure_url } = await cloudinary.uploader.upload(userData.profilePicture, {
+				folder: `${process.env.CLOUDIANRY_FOLDER}/users/profilePictures`,
+				format: "webp",
+				unique_filename: true,
+			});
+			profileImage = secure_url;
+		} else {
+			// If no image provided, use random default image
+			const randomNum = Math.floor(Math.random() * 4) + 1; // Random number between 1-4
+			profileImage = `https://ch-social-link-logo.s3.ap-south-1.amazonaws.com/image-${randomNum}.png`;
 		}
-		const newUser = new UserModel(data);
+
+		// Add the profile image to user data
+		userData.profilePicture = profileImage;
+
+		let existingUser;
+		// Check for existing user by email or phone number
+		if(userData.email){
+			existingUser = await UserModel.findOne({ email: userData.email });
+		}
+		if(userData.phoneNumber){
+			existingUser = await UserModel.findOne({ phoneNumber: userData.phoneNumber });
+		}
+		
+		// Check if the existing user is of type 'raw'
+		if (existingUser) {
+			if (existingUser.userType === "raw") {
+				console.log("raw");
+				// Merge previous data with new data
+				const mergedData = {
+					...existingUser.toObject(), // Convert existing user to plain object
+					...userData, // Merge with new data
+				};
+				// Delete the existing user
+				await UserModel.deleteOne({ _id: existingUser._id });
+				// Create a new user with merged data
+				const newUser = new UserModel(mergedData);
+				await newUser.save();
+
+				// Send welcome email if email is provided
+				if (newUser.email) {
+					const emailContent = await ejs.renderFile("./public/welcomeEmail.ejs", {
+						firstName: newUser.firstName || "New User",
+					});
+
+					await transporter.sendMail({
+						from: `"The Capital Hub" <${process.env.EMAIL_USER}>`,
+						to: newUser.email,
+						subject: "Welcome to CapitalHub!",
+						html: emailContent,
+					});
+				}
+
+				const token = jwt.sign(
+					{ userId: newUser._id, email: newUser.email },
+					secretKey
+				);
+				newUser.password = undefined;
+				return {
+					status: 200,
+					message: "Google Register successful",
+					user: newUser,
+					token: token,
+				};
+			} else {
+				// If user is not of type 'raw', return a message indicating user already exists
+				return {
+					status: 202,
+					message: "User already exists.",
+				};
+			}
+		}
+
+		// If no existing user, proceed with normal registration
+		const newUser = new UserModel(userData);
 		await newUser.save();
+
+		// Send welcome email if email is provided
+		if (userData.email) {
+			const emailContent = await ejs.renderFile("./public/welcomeEmail.ejs", {
+				firstName: newUser.firstName || "New User",
+			});
+
+			await transporter.sendMail({
+				from: `"The Capital Hub" <${process.env.EMAIL_USER}>`,
+				to: newUser.email,
+				subject: "Welcome to CapitalHub!",
+				html: emailContent,
+			});
+		}
+
 		const token = jwt.sign(
 			{ userId: newUser._id, email: newUser.email },
 			secretKey
@@ -1410,16 +1515,13 @@ export const googleRegister = async (data) => {
 		newUser.password = undefined;
 		return {
 			status: 200,
-			message: "Google Register successfull",
+			message: "Google Register successful",
 			user: newUser,
 			token: token,
 		};
 	} catch (error) {
-		console.error("Error Register:", error);
-		return {
-			status: 500,
-			message: "An error occurred while registering using google.",
-		};
+		console.error("Error in Google registration:", error);
+		throw error;
 	}
 };
 
@@ -1802,77 +1904,72 @@ export const updateTopVoice = async (userId) => {
 export const getInactiveFounders = async () => {
 	try {
 		const currentDate = new Date();
-
 		const sevenDaysAgo = new Date(currentDate);
 		sevenDaysAgo.setDate(currentDate.getDate() - 7);
-
 		const thirtyDaysAgo = new Date();
 		thirtyDaysAgo.setDate(new Date().getDate() - 30);
 
+		// Get all startups with their founders
 		const startups = await StartUpModel.find().populate({
 			path: "founderId",
-			select: "companyUpdate email firstName lastName",
-			populate: {
-				path: "companyUpdate",
-				select: "createdAt",
-			},
+			select: "email firstName lastName"
 		});
 
 		const inactiveFounders7Days = [];
 		const inactiveFounders30Days = [];
 
-		startups.forEach((startup) => {
-			if (!startup.founderId) {
-				return;
-			}
+		// Process each startup/founder
+		for (const startup of startups) {
+			if (!startup.founderId) continue;
 
 			const founder = startup.founderId;
-			const companyUpdates = founder.companyUpdate || [];
 
-			if (companyUpdates.length > 0) {
-				companyUpdates.sort(
-					(a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-				);
+			// Get founder's posts
+			const founderPosts = await PostModel.find({
+				user: founder._id
+			}).sort({ createdAt: -1 });
 
-				const latestPostDate = new Date(companyUpdates[0].createdAt);
-
+			if (founderPosts.length > 0) {
+				const latestPostDate = new Date(founderPosts[0].createdAt);
 				const isActiveIn7Days = latestPostDate >= sevenDaysAgo;
-
 				const isActiveIn30Days = latestPostDate >= thirtyDaysAgo;
 
+				// Add to 7-day inactive list if no posts in last 7 days but has posts in last 30 days
 				if (!isActiveIn7Days && isActiveIn30Days) {
-					inactiveFounders30Days.push({
+					inactiveFounders7Days.push({
 						user_first_name: founder.firstName,
 						user_last_name: founder.lastName,
-						user_email: founder.email,
+						user_email: founder.email
 					});
 				}
 
+				// Add to 30-day inactive list if no posts in last 30 days
 				if (!isActiveIn30Days) {
 					inactiveFounders30Days.push({
 						user_first_name: founder.firstName,
 						user_last_name: founder.lastName,
-						user_email: founder.email,
+						user_email: founder.email
 					});
 				}
 			} else {
+				// No posts at all - add to 30-day inactive list
 				inactiveFounders30Days.push({
 					user_first_name: founder.firstName,
 					user_last_name: founder.lastName,
-					user_email: founder.email,
+						user_email: founder.email
 				});
 			}
-		});
+		}
 
 		return {
 			inactiveFounders7Days,
-			inactiveFounders30Days,
+			inactiveFounders30Days
 		};
 	} catch (error) {
 		console.error("Error fetching inactive founders:", error);
 		return {
 			status: 500,
-			message: "Error fetching inactive founders",
+			message: "Error fetching inactive founders"
 		};
 	}
 };
@@ -1947,5 +2044,139 @@ export const getUserAvaibility = async (userId) => {
 			status: 500,
 			message: "Error getting user availability",
 		};
+	}
+};
+
+async function generateOrderId() {
+	try {
+		const uniqueId = crypto.randomBytes(16).toString("hex");
+		const hash = crypto.createHash("sha256");
+		hash.update(uniqueId);
+		return hash.digest("hex").substr(0, 12);
+	} catch (error) {
+		console.error("Error generating order ID:", error);
+		throw new Error("Failed to generate order ID");
+	}
+}
+
+export const createSubscriptionPayment = async (userData) => {
+	try {
+		const orderId = await generateOrderId();
+		const mobileNumber = userData.mobileNumber.replace('+91', '');
+		const request = {
+			order_amount: 1999.00, 
+			order_currency: "INR",
+			order_id: orderId,
+			customer_details: {
+				customer_id: userData.firstName + (mobileNumber? mobileNumber : userData.mobileNumber),
+				customer_name: `${userData.firstName} ${userData.lastName}`.trim(),
+				customer_email: userData.email.toLowerCase().trim(),
+				customer_phone: userData.mobileNumber.trim(),
+			},
+			order_expiry_time: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+		};
+
+		const response = await Cashfree.PGCreateOrder("2023-08-01", request);
+
+		return {
+			status: 200,
+			data: {
+				orderId: response.data.order_id,
+				paymentSessionId: response.data.payment_session_id,
+			},
+		};
+	} catch (error) {
+		console.error("Error in creating subscription payment:", error);
+		throw new Error(error.message);
+	}
+};
+
+export const verifySubscriptionPayment = async (orderId, userId) => {
+	try {
+		const response = await Cashfree.PGOrderFetchPayments("2023-08-01", orderId);
+		
+		if (!response?.data) {
+			throw new Error("Invalid response from payment gateway");
+		}
+
+		const paymentStatus = response.data[0].payment_status;
+
+		if (paymentStatus === "SUCCESS") {
+			await UserModel.findByIdAndUpdate(userId, {
+				isSubscribed: true,
+				subscriptionType: "Pro",
+				trialStartDate: new Date(),
+			});
+		}
+
+		return {
+			status: 200,
+			data: {
+				orderId,
+				paymentId: response.data[0].cf_payment_id,
+				amount: response.data[0].payment_amount,
+				currency: response.data[0].payment_currency,
+				status: paymentStatus,
+				isPaymentSuccessful: paymentStatus === "SUCCESS",
+				paymentMethod: response.data[0].payment_group,
+				paymentTime: response.data[0].payment_completion_time,
+			},
+		};
+	} catch (error) {
+		throw new Error(error.message);
+	}
+};
+
+export const createUserAndInitiatePayment = async (userData) => {
+	try {
+		const { firstName, lastName, email, mobileNumber, userType } = userData;
+
+		// Create new user
+		const user = new UserModel({
+			firstName,
+			lastName,
+			email,
+			phoneNumber: mobileNumber,
+			userType,
+			isInvestor: userType === 'investor',
+			userName: `${firstName}.${lastName}`,
+			userStatus: "active"
+		});
+
+		await user.save();
+
+		// Create payment session
+		const paymentResponse = await createSubscriptionPayment(userData);
+		
+		return {
+			status: 200,
+			data: {
+				...paymentResponse.data,
+				userId: user._id
+			}
+		};
+	} catch (error) {
+		console.error(error);
+		throw new Error(error.message);
+	}
+};
+
+export const getRawUsers = async () => {
+	try{
+		const rawUsers = await UserModel.find({userType: "raw"});
+		return rawUsers;
+	}catch(error){
+		console.error(error);
+		throw new Error(error.message);
+	}
+};
+
+export const getRawUserById = async (userId) => {
+	try{
+		const rawUser = await UserModel.findOne({_id: userId, userType: "raw"});
+		return rawUser;
+	}catch(error){
+		console.error(error);
+		throw new Error(error.message);
 	}
 };

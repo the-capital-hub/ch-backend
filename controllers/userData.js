@@ -40,6 +40,11 @@ import {
 	getInactiveFounders,
 	sendMailtoInactiveFounders,
 	getUserAvaibility,
+	createSubscriptionPayment,
+	verifySubscriptionPayment,
+	createUserAndInitiatePayment,
+	getRawUsers,
+	getRawUserById
 } from "../services/userService.js";
 
 import { sendMail } from "../utils/mailHelper.js";
@@ -102,6 +107,7 @@ export const createUser = async (req, res) => {
 					"_" +
 					Math.floor(Math.random() * Math.pow(10, 4)).toString(),
 				userStatus: "active",
+				registeredFrom: user.registeredFrom,
 			});
 			if (userData._id) {
 				if (user.userType === "Investor") {
@@ -434,6 +440,7 @@ export const sendOTP = async (req, res) => {
 			message: "OTP Send successfully",
 		});
 	} catch (err) {
+		console.log(err);
 		return res.status(500).json({ error: "Failed to fetch data" });
 	}
 };
@@ -463,6 +470,7 @@ export const verifyOtp = async (req, res) => {
 			throw new Error("OTP Verification failed");
 		}
 	} catch (err) {
+		console.log(err);
 		return res.status(500).json({ error: "Failed to fetch data" });
 	}
 };
@@ -530,6 +538,7 @@ export const registerUserController = async (req, res, next) => {
 			portfolio,
 			chequeSize,
 			linkedin,
+			userType
 		} = req.body;
 
 		const newUser = await registerUserService({
@@ -541,6 +550,7 @@ export const registerUserController = async (req, res, next) => {
 			isInvestor,
 			gender,
 			linkedin,
+			userType
 		});
 
 		const generateUniqueOneLink = async (baseLink, model) => {
@@ -591,36 +601,6 @@ export const registerUserController = async (req, res, next) => {
 					location,
 				}
 			);
-			//  console.log("update")
-			// const emailMessage = `
-			//   A new user has requested for an account:
-
-			//   Investor Details:
-			//   User ID: ${newUser._id}
-			//   Name: ${newUser.firstName} ${newUser.lastName}
-			//   Email: ${newUser.email}
-			//   Mobile: ${phoneNumber}
-			//   Company Name: ${newInvestor.companyName}
-			//   Industry: ${newInvestor.industry}
-			//   Portfolio: ${newInvestor.portfolio}
-			// `;
-			// const subject = "New Account Request";
-			// const adminMail = "investments.capitalhub@gmail.com";
-			// //"learn.capitalhub@gmail.com";
-			// const response = await sendMail(
-			//   newUser.firstName,
-			//   adminMail,
-			//   newUser.email,
-			//   subject,
-			//   emailMessage
-			// );
-			// if (response.status === 200) {
-			//   return res
-			//     .status(200)
-			//     .json({ message: "Investor Added", data: newUser });
-			// } else {
-			//   return res.status(500).json({ message: "Error while sending mail" });
-			// }
 			return res
 				.status(201)
 				.json({ message: "User added successfully", data: newUser });
@@ -672,6 +652,42 @@ export const registerUserController = async (req, res, next) => {
 				.json({ message: "User added successfully", data: newUser, token });
 		}
 	} catch ({ message }) {
+		console.log(message);
+		res.status(409).json({
+			success: false,
+			operational: true,
+			message,
+		});
+	}
+};
+
+export const createUserController = async (req, res, next) => {
+	try {
+		const {
+			firstName,
+			lastName,
+			email,
+			phoneNumber,
+			userType,
+			isInvestor,
+			registeredFrom
+		} = req.body;
+
+		const newUser = await registerUserService({
+			firstName,
+			lastName,
+			email,
+			phoneNumber,
+			userType,
+			isInvestor,
+			registeredFrom
+		});
+
+		return res
+			.status(201)
+			.json({ message: "User added successfully", data: newUser });
+	} catch ({ message }) {
+		console.log(message);
 		res.status(409).json({
 			success: false,
 			operational: true,
@@ -735,7 +751,8 @@ export const getLinkedInProfile = async (req, res) => {
 	}
 };
 export const loginUserController = async (req, res, next) => {
-	try {
+	try { 
+		
 		const { phoneNumber, password } = req.body;
 		const user = await loginUserService({
 			phoneNumber,
@@ -1055,7 +1072,6 @@ export const googleLoginController = async (req, res) => {
 export const googleRegisterController = async (req, res) => {
 	try {
 		const { credential } = req.body;
-		console.log("credential", credential);
 		const response = await googleRegister(credential);
 		res.status(response.status).send(response);
 	} catch (error) {
@@ -1122,6 +1138,7 @@ export const linkedInLoginController = async (req, res) => {
 		// Update user with linkedinId
 		user.linkedinId = linkedinId; // Set the linkedinId
 		user.linkedinTokenExpiryDate = expiryDate;
+		user.linkedinToken = linkedinToken;
 		await user.save(); // Save the updated user record
 
 		const token = jwt.sign(
@@ -1366,5 +1383,181 @@ export const sendReportEmail = async (req, res) => {
 		return res
 			.status(500)
 			.send("An error occurred while sending the report email.");
+	}
+};
+
+export const createSubscriptionPaymentController = async (req, res) => {
+	try {
+		const response = await createSubscriptionPayment(req.body);
+		return res.status(response.status).send(response);
+	} catch (error) {
+		console.log(error);
+		return res.status(500).send({
+			status: 500,
+			message: error.message,
+		});
+	}
+};
+
+export const verifySubscriptionPaymentController = async (req, res) => {
+	try {
+		const { orderId } = req.body;
+		const userId = req.userId;
+		const response = await verifySubscriptionPayment(orderId, userId);
+		return res.status(response.status).send(response);
+	} catch (error) {
+		console.log(error);
+		return res.status(500).send({
+			status: 500,
+			message: error.message,
+		});
+	}
+};
+
+export const createUserAndInitiatePaymentController = async (req, res) => {
+	try {
+		const response = await createUserAndInitiatePayment(req.body);
+		return res.status(response.status).send(response);
+	} catch (error) {
+		console.error(error);
+		return res.status(500).send({
+			status: 500,
+			message: error.message,
+		});
+	}
+};
+
+export const registerWithPaymentController = async (req, res) => {
+	try {
+		const { orderId, ...userData } = req.body;
+
+		// Verify payment first
+		const paymentVerification = await verifySubscriptionPayment(orderId);
+		
+		if (!paymentVerification.data.isPaymentSuccessful) {
+			return res.status(400).send({
+				status: 400,
+				message: "Payment verification failed"
+			});
+		}
+
+		// Create user only after payment verification
+		const user = new UserModel({
+			firstName: userData.firstName,
+			lastName: userData.lastName,
+			email: userData.email.toLowerCase(),
+			phoneNumber: userData.mobileNumber,
+			userType: userData.userType,
+			isInvestor: userData.userType === 'investor',
+			userName: `${userData.firstName}.${userData.lastName}`,
+			userStatus: "active",
+			isSubscribed: true,
+			subscriptionType: "Pro",
+			trialStartDate: new Date()
+		});
+
+		await user.save();
+
+		// Generate token
+		const token = jwt.sign(
+			{ userId: user._id, email: user.email },
+			secretKey
+		);
+
+		// Send welcome email
+		const emailContent = await ejs.renderFile("./public/welcomeEmail.ejs", {
+			firstName: userData.firstName,
+		});
+
+		await transporter.sendMail({
+			from: `"The Capital Hub" <${process.env.EMAIL_USER}>`,
+			to: userData.email,
+			subject: "Welcome to CapitalHub!",
+			html: emailContent,
+		});
+
+		return res.status(200).send({
+			status: 200,
+			message: "Registration successful",
+			data: {
+				user,
+				token
+			}
+		});
+	} catch (error) {
+		console.error(error);
+		return res.status(500).send({
+			status: 500,
+			message: error.message
+		});
+	}
+};
+
+export const sendMailOTP = async (req, res) => {
+	try {
+		const { email } = req.body;
+		const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+		// Create a token with OTP and expiry (e.g., 5 minutes)
+		const token = jwt.sign({ otp, email }, process.env.JWT_SECRET_KEY, { expiresIn: '5m' });
+
+		// Send email
+		const emailContent = await ejs.renderFile("./public/otpEmail.ejs", {
+			otp
+		});
+
+		await transporter.sendMail({
+			from: `"The Capital Hub" <${process.env.EMAIL_USER}>`,
+			to: email,
+			subject: "Email Verification OTP",
+			html: emailContent
+		});
+
+		res.status(200).json({ 
+			message: "OTP sent successfully",
+			orderId: token // Send the token as orderId
+		});
+	} catch (error) {
+		console.error("Error sending mail OTP:", error);
+		res.status(500).json({ message: "Error sending OTP" });
+	}
+};
+
+export const verifyMailOTP = async (req, res) => {
+	try {
+		const { otp, orderId } = req.body;
+
+		// Verify the token
+		const decoded = jwt.verify(orderId, process.env.JWT_SECRET_KEY);
+
+		if (decoded.otp === otp) {
+			return res.status(200).json({ message: "OTP verified successfully", success: true });
+		} else {
+			return res.status(400).json({ message: "Invalid OTP", success: false });
+		}
+	} catch (error) {
+		console.error("Error verifying mail OTP:", error);
+		res.status(500).json({ message: "Error verifying OTP", success: false });
+	}
+};
+
+export const getRawUsersController = async (req, res) => {
+	try {
+		const response = await getRawUsers();
+		return res.status(200).send(response);
+	} catch (error) {
+		console.error(error);
+		return res.status(500).send({ status: 500, message: error.message });
+	}
+};
+
+export const getRawUserByIdController = async (req, res) => {
+	try {
+		const { userId } = req.params;
+		const response = await getRawUserById(userId);
+		return res.status(200).send(response);
+	} catch (error) {
+		console.error(error);
+		return res.status(500).send({ status: 500, message: error.message });
 	}
 };

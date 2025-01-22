@@ -6,6 +6,100 @@ import moment from 'moment';
 import { Cashfree } from "cashfree-pg";
 import crypto from "crypto";
 import { v4 as uuidv4 } from "uuid";
+import ejs from "ejs";
+import nodemailer from "nodemailer";
+import { UnorderedBulkOperation } from "mongodb";
+
+const transporter = nodemailer.createTransport({
+	service: "gmail",
+	secure: false,
+	auth: {
+		user: process.env.EMAIL_USER,
+		pass: process.env.EMAIL_PASS,
+	},
+});
+
+async function sendCommunityDeletionEmail(email, data) {
+  try {
+    const emailContent = await ejs.renderFile("./public/communityDeletionEmail.ejs", {
+      memberName: data.memberName,
+      communityName: data.communityName,
+      adminName: data.adminName,
+      reason: data.reason
+    });
+
+    await transporter.sendMail({
+      from: `"The Capital Hub" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: "Community Deleted",
+      html: emailContent,
+    });
+  } catch (error) {
+    console.error("Error sending community deletion email:", error);
+  }
+}
+
+async function sendMemberRemovalEmail(email, data) {
+  try {
+    const emailContent = await ejs.renderFile("./public/memberRemoval.ejs", {
+      memberName: data.memberName,
+      communityName: data.communityName,
+      adminName: data.adminName,
+      reason: data.reason
+    });
+
+    await transporter.sendMail({
+      from: `"The Capital Hub" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: "Removed from Community",
+      html: emailContent,
+    });
+  } catch (error) {
+    console.error("Error sending member removal email:", error);
+  }
+}
+
+async function sendMemberLeaveEmail(email, data) {
+  try {
+    const emailContent = await ejs.renderFile("./public/memberLeaveEmail.ejs", {
+      memberName: data.memberName,
+      communityName: data.communityName,
+      reason: data.reason
+    });
+
+    await transporter.sendMail({
+      from: `"The Capital Hub" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: "Member Left Community",
+      html: emailContent,
+    });
+  } catch (error) {
+    console.error("Error sending member leave email:", error);
+  }
+}
+
+async function sendPurchaseEmail(email, data, isSuccess = true) {
+  try {
+    const template = isSuccess ? './public/purchaseSuccess.ejs' : './public/purchaseFailed.ejs';
+    const emailContent = await ejs.renderFile(template, {
+      userName: data.userName,
+      communityName: data.communityName,
+      productName: data.productName,
+      productPrice: data.productPrice,
+      purchaseDate: new Date().toLocaleDateString(),
+      errorMessage: data.errorMessage
+    });
+
+    await transporter.sendMail({
+      from: `"The Capital Hub" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: isSuccess ? "Purchase Successful" : "Purchase Failed",
+      html: emailContent,
+    });
+  } catch (error) {
+    console.error("Error sending purchase email:", error);
+  }
+}
 
 export const createCommunity = async (communitydata) => {
   try {
@@ -51,7 +145,10 @@ if(isSubscribed){
 
 export const getCommunityById = async (communityId) => {
   try {
-    const community = await community_schema.findById(communityId)
+    const community = await community_schema.findOne({ 
+      _id: communityId,
+      is_deleted: false 
+    })
       .populate({
         path: 'members.member',  
         populate: [
@@ -114,6 +211,7 @@ export const getCommunityByname = async (communityName) => {
 export const getAllCommunitiesByUserId = async (userId) => {
   try {
     const communities = await community_schema.find({
+      is_deleted: false,
       $or: [
         { adminId: userId },
         { 'members.member': userId }
@@ -149,7 +247,7 @@ export const getAllCommunitiesByUserId = async (userId) => {
 
 export const getAllCommunities = async () => {
   try {
-    const communities = await community_schema.find()
+    const communities = await community_schema.find({ is_deleted: false })
       .populate({
         path: "members",
         model: "Users",
@@ -174,13 +272,15 @@ export const getAllCommunities = async () => {
 export const updateCommunity = async (communityId, updatedData) => {
   try {
     const community = await community_schema.findById(communityId);
-
+    
     if (!community) {
       return {
         status: 404,
         message: 'Community not found',
       };
     }
+
+    // Handle image upload if provided
     if (updatedData.image) {
       const { secure_url } = await cloudinary.uploader.upload(updatedData.image, {
         folder: `${process.env.CLOUDIANRY_FOLDER}/posts/images`,
@@ -190,17 +290,24 @@ export const updateCommunity = async (communityId, updatedData) => {
       community.image = secure_url;
     }
 
+    // Handle amount based on subscription type
+    if (updatedData.subscription === 'free') {
+      community.amount = null;
+    } else if (updatedData.subscription === 'paid') {
+      community.amount = updatedData.amount || community.amount;
+    }
+
+    // Update other fields
     community.name = updatedData.name || community.name;
     community.size = updatedData.size || community.size;
     community.subscription = updatedData.subscription || community.subscription;
     community.members = updatedData.members || community.members;
-    community.amount = updatedData.amount || community.amount;
-    community.isOpen = updatedData.isOpen || community.isOpen;
+    community.isOpen = updatedData.hasOwnProperty('isOpen') ? updatedData.isOpen : community.isOpen;
     community.about = updatedData.about || community.about;
     community.terms_and_conditions = updatedData.terms_and_conditions || community.terms_and_conditions;
+    community.whatsapp_group_link = updatedData.whatsapp_group_link || community.whatsapp_group_link;
 
     await community.save();
-    console.log(community);
 
     return {
       status: 200,
@@ -313,7 +420,7 @@ export const addMembersToCommunity = async (communityId, memberIds) => {
     ];
 
     community.members = Array.from(
-      new Map(community.members.map(item => [item.member.toString(), item])).values()
+      new Map(community.members.map(item => [item.member, item])).values()
     );
 
     // Save the community document after modifying the members array
@@ -390,6 +497,7 @@ export const addProductToCommunity = async (communityId, productData) => {
 export const buyProduct = async (userId, productId, communityId) => {
   try {
     const community = await community_schema.findById(communityId);
+    const user = await UserModel.findById(userId);
     
     if (!community) {
       return {
@@ -408,6 +516,15 @@ export const buyProduct = async (userId, productId, communityId) => {
     }
 
     if (product.purchased_by.includes(userId)) {
+      // Send failure email
+      await sendPurchaseEmail(user.email, {
+        userName: user.firstName,
+        communityName: community.name,
+        productName: product.name,
+        productPrice: product.price,
+        errorMessage: "Product already purchased"
+      }, false);
+
       return {
         status: 400,
         message: "You have already purchased this product"
@@ -417,6 +534,14 @@ export const buyProduct = async (userId, productId, communityId) => {
     product.purchased_by.push(userId);
     await community.save();
 
+    // Send success email
+    await sendPurchaseEmail(user.email, {
+      userName: user.firstName,
+      communityName: community.name,
+      productName: product.name,
+      productPrice: product.price
+    });
+
     return {
       status: 200,
       message: "Product purchased successfully",
@@ -424,6 +549,18 @@ export const buyProduct = async (userId, productId, communityId) => {
     };
   } catch (error) {
     console.error(error);
+    
+    // Send failure email if user exists
+    if (user) {
+      await sendPurchaseEmail(user.email, {
+        userName: user.firstName,
+        communityName: community?.name || 'Unknown',
+        productName: product?.name || 'Unknown',
+        productPrice: product?.price || 0,
+        errorMessage: "An unexpected error occurred"
+      }, false);
+    }
+
     return {
       status: 500,
       message: "An error occurred while purchasing the product"
@@ -503,4 +640,180 @@ export const verifyPayment = async (orderId, entityId, entityType, userData) => 
   } catch (error) {
     throw new Error(error.message);
   }
+};
+
+export const softDeleteCommunity = async (communityId, userId, reason) => {
+  try {
+    const community = await community_schema.findOne({ 
+      _id: communityId, 
+      adminId: userId,
+      is_deleted: false 
+    });
+
+    if (!community) {
+      return {
+        status: 404,
+        message: 'Community not found or you are not authorized'
+      };
+    }
+
+    community.is_deleted = true;
+    community.deletion_reason = reason;
+    community.deleted_at = new Date();
+    await community.save();
+
+    // Send email to all members
+    const members = await UserModel.find({ _id: { $in: community.members } });
+    const admin = await UserModel.findById(userId);
+
+    for (const member of members) {
+      await sendCommunityDeletionEmail(member.email, {
+        communityId: community._id,
+        memberName: member.firstName,
+        communityName: community.name,
+        adminName: `${admin.firstName} ${admin.lastName}`,
+        reason: reason
+      });
+    }
+
+    await sendCommunityDeletionEmail("dev.capitalhub@gmail.com", {
+      communityId: community._id,
+      memberName: "The Capital Hub",
+      communityName: community.name,
+      adminName: `${admin.firstName} ${admin.lastName}`,
+      reason: reason
+    });
+
+    return {
+      status: 200,
+      message: 'Community deleted successfully'
+    };
+  } catch (error) {
+    console.error(error);
+    return {
+      status: 500,
+      message: 'An error occurred while deleting the community'
+    };
+  }
+};
+
+export const removeMember = async (communityId, adminId, memberId, reason) => {
+  try {
+    const community = await community_schema.findOne({ 
+      _id: communityId, 
+      adminId: adminId,
+      is_deleted: false 
+    });
+
+    if (!community) {
+      return {
+        status: 404,
+        message: 'Community not found or you are not authorized'
+      };
+    }
+
+    community.members = community.members.filter(member => member.member.toString() !== memberId);
+    community.removed_members.push({
+      member: memberId,
+      reason: reason,
+      removed_at: new Date(),
+      removed_by: adminId
+    });
+    await community.save();
+
+    // Send email to removed member
+    const member = await UserModel.findById(memberId);
+    const admin = await UserModel.findById(adminId);
+    await sendMemberRemovalEmail(member.email, {
+      memberName: member.firstName,
+      communityName: community.name,
+      adminName: `${admin.firstName} ${admin.lastName}`,
+      reason: reason
+    });
+
+    return {
+      status: 200,
+      message: 'Member removed successfully'
+    };
+  } catch (error) {
+    console.error(error);
+    return {
+      status: 500,
+      message: 'An error occurred while removing the member'
+    };
+  }
+};
+
+export const leaveCommunity = async (communityId, userId, reason) => {
+  try {
+    const community = await community_schema.findOne({ 
+      _id: communityId,
+      'members.member': userId,
+      is_deleted: false 
+    });
+
+    if (!community) {
+      return {
+        status: 404,
+        message: 'Community not found or you are not a member'
+      };
+    }
+
+    // Remove member and add to removed_members with reason
+    community.members = community.members.filter(m => m.member.toString() !== userId);
+    community.removed_members.push({
+      member: userId,
+      reason: reason,
+      removed_at: new Date(),
+      removed_by: userId // self-removal
+    });
+    await community.save();
+
+    // Send email to admin
+    const member = await UserModel.findById(userId);
+    const admin = await UserModel.findById(community.adminId);
+    await sendMemberLeaveEmail(admin.email, {
+      memberName: `${member.firstName} ${member.lastName}`,
+      communityName: community.name,
+      reason: reason
+    });
+
+    return {
+      status: 200,
+      message: 'Successfully left the community'
+    };
+  } catch (error) {
+    console.error(error);
+    return {
+      status: 500,
+      message: 'An error occurred while leaving the community'
+    };
+  }
+};
+
+// Function to send join request email to admin
+export const sendJoinRequestEmail = async (data) => {
+    const transporter = nodemailer.createTransport({
+        service: "gmail",
+        secure: false,
+        auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS,
+        },
+    });
+
+    const emailContent = `
+        <h1>Join WhatsApp Group Request</h1>
+        <p><strong>Name:</strong> ${data.name}</p>
+        <p><strong>Email:</strong> ${data.email}</p>
+        <p><strong>Phone Number:</strong> ${data.phoneNumber}</p>
+        <p><strong>Requested Number:</strong> ${data.requestedNumber}</p>
+    `;
+
+    await transporter.sendMail({
+        from: `"The Capital Hub" <${process.env.EMAIL_USER}>`,
+        to: data.adminEmail,
+        subject: "WhatsApp Group Join Request",
+        html: emailContent,
+    });
 };

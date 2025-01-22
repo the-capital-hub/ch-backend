@@ -115,6 +115,7 @@ const userSchema = new Schema(
 		linkedinId: { type: String },
 		linkedinTokenExpiryDate: { type: Date },
 		linkedin: { type: String },
+		linkedinToken: { type: String },
 
 		// Connections
 		connections: [{ type: Schema.Types.ObjectId, ref: "Users" }],
@@ -178,7 +179,6 @@ const userSchema = new Schema(
 			type: String,
 			default: generateRandomNumber,
 			unique: true,
-			required: true,
 		},
 		secretKey: { type: String },
 		isAdmin: { type: Boolean, default: false },
@@ -197,6 +197,15 @@ const userSchema = new Schema(
 		isSubscribed: { type: Boolean, default: false },
 		trialStartDate: { type: Date },
 		investorIdCount: [{ type: String }],
+
+		userType: {
+			type: String,
+			enum: ['startup founder', 'startup employee', 'investor', 'vc', 'student', 'raw']
+		},
+		registeredFrom: {
+			type: String,
+			default: '/signUp',
+		},
 	},
 	{
 		timestamps: true,
