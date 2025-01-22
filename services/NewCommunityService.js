@@ -8,6 +8,7 @@ import crypto from "crypto";
 import { v4 as uuidv4 } from "uuid";
 import ejs from "ejs";
 import nodemailer from "nodemailer";
+import { UnorderedBulkOperation } from "mongodb";
 
 const transporter = nodemailer.createTransport({
 	service: "gmail",
@@ -271,13 +272,15 @@ export const getAllCommunities = async () => {
 export const updateCommunity = async (communityId, updatedData) => {
   try {
     const community = await community_schema.findById(communityId);
-
+    
     if (!community) {
       return {
         status: 404,
         message: 'Community not found',
       };
     }
+
+    // Handle image upload if provided
     if (updatedData.image) {
       const { secure_url } = await cloudinary.uploader.upload(updatedData.image, {
         folder: `${process.env.CLOUDIANRY_FOLDER}/posts/images`,
@@ -287,18 +290,24 @@ export const updateCommunity = async (communityId, updatedData) => {
       community.image = secure_url;
     }
 
+    // Handle amount based on subscription type
+    if (updatedData.subscription === 'free') {
+      community.amount = null;
+    } else if (updatedData.subscription === 'paid') {
+      community.amount = updatedData.amount || community.amount;
+    }
+
+    // Update other fields
     community.name = updatedData.name || community.name;
     community.size = updatedData.size || community.size;
     community.subscription = updatedData.subscription || community.subscription;
     community.members = updatedData.members || community.members;
-    community.amount = updatedData.amount || community.amount;
-    community.isOpen = updatedData.isOpen || community.isOpen;
+    community.isOpen = updatedData.hasOwnProperty('isOpen') ? updatedData.isOpen : community.isOpen;
     community.about = updatedData.about || community.about;
     community.terms_and_conditions = updatedData.terms_and_conditions || community.terms_and_conditions;
     community.whatsapp_group_link = updatedData.whatsapp_group_link || community.whatsapp_group_link;
 
     await community.save();
-    console.log(community);
 
     return {
       status: 200,
@@ -411,7 +420,7 @@ export const addMembersToCommunity = async (communityId, memberIds) => {
     ];
 
     community.members = Array.from(
-      new Map(community.members.map(item => [item.member.toString(), item])).values()
+      new Map(community.members.map(item => [item.member, item])).values()
     );
 
     // Save the community document after modifying the members array

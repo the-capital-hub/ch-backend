@@ -137,9 +137,9 @@ export const addMembersToCommunityController = async (req, res) => {
     const { communityId } = req.params;
     const { memberIds } = req.body;
     const response = await addMembersToCommunity(communityId, memberIds);
-    console.log(response)
     return res.status(response.status).send(response);
   } catch (error) {
+    console.log(error)
     console.error(error);
     return res.status(500).send({
       status: 500,
