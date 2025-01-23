@@ -56,6 +56,8 @@ import {
 	verifyMailOTP,
 	getRawUsersController,
 	getRawUserByIdController,
+	getUserByPhoneNumberController,
+	getUserByEmailController,
 } from "../controllers/userData.js";
 
 import { authenticateToken } from "../middlewares/authenticateToken.js";
@@ -99,6 +101,8 @@ router.get("/getUserEmail/:userId", getUserEmailByIdController);
 router.get("/getRawUsers", getRawUsersController);
 router.get("/getRawUserById/:userId", getRawUserByIdController);
 router.patch("/updateUserById/:userId", updateUserByIdController);
+router.post("/getUserByPhoneNumber", getUserByPhoneNumberController);
+router.post("/getUserByEmail", getUserByEmailController);
 
 router.post("/requestPasswordReset", requestPasswordResetController);
 
