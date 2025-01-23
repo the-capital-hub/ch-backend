@@ -20,10 +20,30 @@ const storage = multer.diskStorage({
   },
 });
 
-const upload = multer({ storage });
+const upload = multer({
+  storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024 
+  }
+});
 
 router.get("/getDocument", getDocumentList);
-router.post("/uploadDocument", upload.single("file") , uploadDocumentController);
+router.post("/uploadDocument", (req, res, next) => {
+  upload.single("file")(req, res, (err) => {
+    if (err instanceof multer.MulterError) {
+      // A Multer error occurred when uploading
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(413).json({ error: 'File size cannot exceed 10MB' });
+      }
+      return res.status(400).json({ error: err.message });
+    } else if (err) {
+      // An unknown error occurred
+      return res.status(500).json({ error: 'Something went wrong' });
+    }
+    // If no error, proceed with your controller
+    uploadDocumentController(req, res, next);
+  });
+});
 router.post("/getDocumentsByUser", getDocumentByUserController);
 router.post("/createFolder", createFolderController);
 router.get("/getFolderByUser/:oneLinkId", getFolderByUserController);
