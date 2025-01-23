@@ -2180,3 +2180,36 @@ export const getRawUserById = async (userId) => {
 		throw new Error(error.message);
 	}
 };
+
+export const getUserByPhoneNumber = async (phoneNumber) => {
+	try {
+		// Format the input phone number by removing '+91' if present
+		const formattedInput = phoneNumber.replace('+91', '');
+		
+		// Create an array of possible formats to check
+		const possibleFormats = [
+			formattedInput,         // without +91
+			`+91${formattedInput}`, // with +91
+		];
+
+		// Find user with any of the possible phone number formats
+		const user = await UserModel.findOne({
+			phoneNumber: { $in: possibleFormats }
+		});
+
+		return user;
+	} catch (error) {
+		console.error(error);
+		throw new Error(error.message);
+	}
+};
+
+export const getUserByEmail = async (email) => {
+	try{
+		const user = await UserModel.findOne({email});
+		return user;
+	}catch(error){
+		console.error(error);
+		throw new Error(error.message);
+	}
+};

@@ -44,7 +44,9 @@ import {
 	verifySubscriptionPayment,
 	createUserAndInitiatePayment,
 	getRawUsers,
-	getRawUserById
+	getRawUserById,
+	getUserByPhoneNumber,
+	getUserByEmail
 } from "../services/userService.js";
 
 import { sendMail } from "../utils/mailHelper.js";
@@ -1555,6 +1557,28 @@ export const getRawUserByIdController = async (req, res) => {
 	try {
 		const { userId } = req.params;
 		const response = await getRawUserById(userId);
+		return res.status(200).send(response);
+	} catch (error) {
+		console.error(error);
+		return res.status(500).send({ status: 500, message: error.message });
+	}
+};
+
+export const getUserByPhoneNumberController = async (req, res) => {
+	try {
+		const { phoneNumber } = req.body;
+		const response = await getUserByPhoneNumber(phoneNumber);
+		return res.status(200).send(response);
+	} catch (error) {
+		console.error(error);
+		return res.status(500).send({ status: 500, message: error.message });
+	}
+};
+
+export const getUserByEmailController = async (req, res) => {
+	try {
+		const { email } = req.body;
+		const response = await getUserByEmail(email);
 		return res.status(200).send(response);
 	} catch (error) {
 		console.error(error);
