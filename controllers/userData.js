@@ -2,7 +2,7 @@ import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
 import ejs from "ejs";
 import {
-	getUserByUsername,
+	getUserByUsernameOrOneLinkId,
 	registerUserService,
 	getUsersService,
 	getUserAnalyticsDataByUserName,
@@ -44,7 +44,7 @@ import {
 	verifySubscriptionPayment,
 	createUserAndInitiatePayment,
 	getRawUsers,
-	getRawUserById
+	getRawUserById,
 } from "../services/userService.js";
 
 import { sendMail } from "../utils/mailHelper.js";
@@ -225,10 +225,11 @@ export const getUserAnalyticsDataByUserNameController = async (req, res) => {
 	}
 };
 
-export const getUserByUsernameController = async (req, res) => {
+export const getUserByUsernameOrOneLinkIdController = async (req, res) => {
 	try {
 		const { username } = req.params;
-		const response = await getUserByUsername(username);
+		const { onelinkId } = req.params;
+		const response = await getUserByUsernameOrOneLinkId(username, onelinkId);
 		return res.status(response.status).send(response);
 	} catch (error) {
 		console.error(error);
@@ -538,7 +539,7 @@ export const registerUserController = async (req, res, next) => {
 			portfolio,
 			chequeSize,
 			linkedin,
-			userType
+			userType,
 		} = req.body;
 
 		const newUser = await registerUserService({
@@ -550,7 +551,7 @@ export const registerUserController = async (req, res, next) => {
 			isInvestor,
 			gender,
 			linkedin,
-			userType
+			userType,
 		});
 
 		const generateUniqueOneLink = async (baseLink, model) => {
@@ -670,7 +671,7 @@ export const createUserController = async (req, res, next) => {
 			phoneNumber,
 			userType,
 			isInvestor,
-			registeredFrom
+			registeredFrom,
 		} = req.body;
 
 		const newUser = await registerUserService({
@@ -680,7 +681,7 @@ export const createUserController = async (req, res, next) => {
 			phoneNumber,
 			userType,
 			isInvestor,
-			registeredFrom
+			registeredFrom,
 		});
 
 		return res
@@ -751,8 +752,7 @@ export const getLinkedInProfile = async (req, res) => {
 	}
 };
 export const loginUserController = async (req, res, next) => {
-	try { 
-		
+	try {
 		const { phoneNumber, password } = req.body;
 		const user = await loginUserService({
 			phoneNumber,
@@ -1433,11 +1433,11 @@ export const registerWithPaymentController = async (req, res) => {
 
 		// Verify payment first
 		const paymentVerification = await verifySubscriptionPayment(orderId);
-		
+
 		if (!paymentVerification.data.isPaymentSuccessful) {
 			return res.status(400).send({
 				status: 400,
-				message: "Payment verification failed"
+				message: "Payment verification failed",
 			});
 		}
 
@@ -1448,21 +1448,18 @@ export const registerWithPaymentController = async (req, res) => {
 			email: userData.email.toLowerCase(),
 			phoneNumber: userData.mobileNumber,
 			userType: userData.userType,
-			isInvestor: userData.userType === 'investor',
+			isInvestor: userData.userType === "investor",
 			userName: `${userData.firstName}.${userData.lastName}`,
 			userStatus: "active",
 			isSubscribed: true,
 			subscriptionType: "Pro",
-			trialStartDate: new Date()
+			trialStartDate: new Date(),
 		});
 
 		await user.save();
 
 		// Generate token
-		const token = jwt.sign(
-			{ userId: user._id, email: user.email },
-			secretKey
-		);
+		const token = jwt.sign({ userId: user._id, email: user.email }, secretKey);
 
 		// Send welcome email
 		const emailContent = await ejs.renderFile("./public/welcomeEmail.ejs", {
@@ -1481,14 +1478,14 @@ export const registerWithPaymentController = async (req, res) => {
 			message: "Registration successful",
 			data: {
 				user,
-				token
-			}
+				token,
+			},
 		});
 	} catch (error) {
 		console.error(error);
 		return res.status(500).send({
 			status: 500,
-			message: error.message
+			message: error.message,
 		});
 	}
 };
@@ -1499,23 +1496,25 @@ export const sendMailOTP = async (req, res) => {
 		const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
 		// Create a token with OTP and expiry (e.g., 5 minutes)
-		const token = jwt.sign({ otp, email }, process.env.JWT_SECRET_KEY, { expiresIn: '5m' });
+		const token = jwt.sign({ otp, email }, process.env.JWT_SECRET_KEY, {
+			expiresIn: "5m",
+		});
 
 		// Send email
 		const emailContent = await ejs.renderFile("./public/otpEmail.ejs", {
-			otp
+			otp,
 		});
 
 		await transporter.sendMail({
 			from: `"The Capital Hub" <${process.env.EMAIL_USER}>`,
 			to: email,
 			subject: "Email Verification OTP",
-			html: emailContent
+			html: emailContent,
 		});
 
-		res.status(200).json({ 
+		res.status(200).json({
 			message: "OTP sent successfully",
-			orderId: token // Send the token as orderId
+			orderId: token, // Send the token as orderId
 		});
 	} catch (error) {
 		console.error("Error sending mail OTP:", error);
@@ -1531,7 +1530,9 @@ export const verifyMailOTP = async (req, res) => {
 		const decoded = jwt.verify(orderId, process.env.JWT_SECRET_KEY);
 
 		if (decoded.otp === otp) {
-			return res.status(200).json({ message: "OTP verified successfully", success: true });
+			return res
+				.status(200)
+				.json({ message: "OTP verified successfully", success: true });
 		} else {
 			return res.status(400).json({ message: "Invalid OTP", success: false });
 		}

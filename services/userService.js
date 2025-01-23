@@ -53,14 +53,14 @@ const transporter = nodemailer.createTransport({
 // };
 
 export const getUsersService = async () => {
-    try {
-        // Fetch all user documents
-        const users = await UserModel.find({});
-        return users;
-    } catch (error) {
-        console.error("Failed to fetch data:", error);
-        return [];
-    }
+	try {
+		// Fetch all user documents
+		const users = await UserModel.find({});
+		return users;
+	} catch (error) {
+		console.error("Failed to fetch data:", error);
+		return [];
+	}
 };
 
 export const registerUserService = async (user) => {
@@ -74,7 +74,6 @@ export const registerUserService = async (user) => {
 		}
 		const newUser = new UserModel(user);
 		await newUser.save();
-
 
 		const targetUserId = "66823fc5e233b21acca0b471";
 		const targetUser = await UserModel.findById(targetUserId);
@@ -90,18 +89,18 @@ export const registerUserService = async (user) => {
 		await newUser.save();
 
 		// Send welcome email
-		if(user.email){
+		if (user.email) {
 			const emailContent = await ejs.renderFile("./public/welcomeEmail.ejs", {
-			firstName: user.firstName || "New User",
-		});
+				firstName: user.firstName || "New User",
+			});
 
-		await transporter.sendMail({
-			from: `"The Capital Hub" <${process.env.EMAIL_USER}>`,
-			to: user.email,
-			subject: "Welcome to CapitalHub!",
-			html: emailContent,
-		});
-	}
+			await transporter.sendMail({
+				from: `"The Capital Hub" <${process.env.EMAIL_USER}>`,
+				to: user.email,
+				subject: "Welcome to CapitalHub!",
+				html: emailContent,
+			});
+		}
 
 		return newUser;
 	} catch (error) {
@@ -178,9 +177,75 @@ export const getUserAnalyticsDataByUserName = async (username) => {
 	}
 };
 
-export const getUserByUsername = async (username) => {
+// export const getUserByUsername = async (username, onelinkId) => {
+// 	try {
+// 		// First, try to find the user by username
+// 		let user = await UserModel.findOne({ userName: username })
+// 			.populate("startUp")
+// 			.populate("investor")
+// 			.populate("connections")
+// 			.populate("featuredPosts")
+// 			.populate("achievements")
+// 			.populate("savedPosts.posts")
+// 			.populate("eventId")
+// 			.populate("Availability");
+
+// 		// If user is not found, try to find by oneLinkId
+// 		if (!user) {
+// 			user = await UserModel.findOne({ oneLinkId: onelinkId })
+// 				.populate("startUp")
+// 				.populate("investor")
+// 				.populate("connections")
+// 				.populate("featuredPosts")
+// 				.populate("achievements")
+// 				.populate("savedPosts.posts")
+// 				.populate("eventId")
+// 				.populate("Availability");
+
+// 			// If user is found by oneLinkId and userName is not set, create it
+// 			if (user && !user.userName) {
+// 				user.userName = `${user.firstName.toLowerCase()}.${user.lastName.toLowerCase()}`;
+// 				await user.save(); // Save the updated user back to the database
+// 			}
+// 		}
+
+// 		// If user is still not found, return a 404 response
+// 		if (!user) {
+// 			return {
+// 				status: 404,
+// 				message: "User  not found or no user exists",
+// 			};
+// 		}
+
+// 		// Set email to undefined
+// 		user.email = undefined;
+
+// 		return {
+// 			status: 200,
+// 			user: user,
+// 			message: "User  found successfully",
+// 		};
+// 	} catch (error) {
+// 		console.error("An error occurred while finding the user", error);
+// 		return {
+// 			status: 500,
+// 			message: "An error occurred while finding the user",
+// 		};
+// 	}
+// };
+
+export const getUserByUsernameOrOneLinkId = async (username, oneLinkId) => {
 	try {
-		const user = await UserModel.findOne({ userName: username })
+		// Check if username is provided
+		if (!username && !oneLinkId) {
+			return {
+				status: 404,
+				message: "User not found or no user exists",
+			};
+		}
+
+		// First, try to find the user by username
+		let user = await UserModel.findOne({ userName: username })
 			.populate("startUp")
 			.populate("investor")
 			.populate("connections")
@@ -190,6 +255,26 @@ export const getUserByUsername = async (username) => {
 			.populate("eventId")
 			.populate("Availability");
 
+		// If user is not found, try to find by oneLinkId
+		if (!user && oneLinkId) {
+			user = await UserModel.findOne({ oneLinkId: oneLinkId })
+				.populate("startUp")
+				.populate("investor")
+				.populate("connections")
+				.populate("featuredPosts")
+				.populate("achievements")
+				.populate("savedPosts.posts")
+				.populate("eventId")
+				.populate("Availability");
+
+			// If user is found by oneLinkId and userName is not set, create it
+			if (user && !user.userName) {
+				user.userName = `${user.firstName.toLowerCase()}.${user.lastName.toLowerCase()}`;
+				await user.save(); // Save the updated user back to the database
+			}
+		}
+
+		// If user is still not found, return a 404 response
 		if (!user) {
 			return {
 				status: 404,
@@ -197,19 +282,45 @@ export const getUserByUsername = async (username) => {
 			};
 		}
 
+		// Fetch posts associated with the user
+		const posts = await PostModel.find({ user: user._id });
+
+		// Fetch events associated with the user
+		const events = await EventModel.find({ userId: user._id })
+			.populate("bookings")
+			.populate("communityId");
+
+		// Fetch or create analytics for the user
+		let userAnalytics = await UserAnalyticsModel.findOne({ userId: user._id });
+
+		if (!userAnalytics) {
+			// If no analytics exist, create a new document
+			userAnalytics = new UserAnalyticsModel({
+				userId: user._id,
+				publicProfileViews: 0, // Initialize to 1 for the first view
+				detailedProfileViews: 1,
+			});
+		} else {
+			// Increment the publicProfileViews
+			userAnalytics.detailedProfileViews += 1;
+		}
+
+		// Save the user analytics
+		await userAnalytics.save();
+
 		// Set email to undefined
 		user.email = undefined;
 
 		return {
 			status: 200,
-			user: user,
 			message: "User found successfully",
+			data: { user, posts, events, userAnalytics },
 		};
 	} catch (error) {
 		console.error("An error occurred while finding the user", error);
 		return {
 			status: 500,
-			message: "An error occurred while finding the user",
+			message: "Internal server error",
 		};
 	}
 };
@@ -1414,14 +1525,17 @@ export const googleLogin = async ({
 export const googleRegister = async (userData) => {
 	try {
 		let profileImage;
-		
+
 		if (userData?.profilePicture) {
 			// If user provided an image, upload to cloudinary
-			const { secure_url } = await cloudinary.uploader.upload(userData.profilePicture, {
-				folder: `${process.env.CLOUDIANRY_FOLDER}/users/profilePictures`,
-				format: "webp",
-				unique_filename: true,
-			});
+			const { secure_url } = await cloudinary.uploader.upload(
+				userData.profilePicture,
+				{
+					folder: `${process.env.CLOUDIANRY_FOLDER}/users/profilePictures`,
+					format: "webp",
+					unique_filename: true,
+				}
+			);
 			profileImage = secure_url;
 		} else {
 			// If no image provided, use random default image
@@ -1434,13 +1548,15 @@ export const googleRegister = async (userData) => {
 
 		let existingUser;
 		// Check for existing user by email or phone number
-		if(userData.email){
+		if (userData.email) {
 			existingUser = await UserModel.findOne({ email: userData.email });
 		}
-		if(userData.phoneNumber){
-			existingUser = await UserModel.findOne({ phoneNumber: userData.phoneNumber });
+		if (userData.phoneNumber) {
+			existingUser = await UserModel.findOne({
+				phoneNumber: userData.phoneNumber,
+			});
 		}
-		
+
 		// Check if the existing user is of type 'raw'
 		if (existingUser) {
 			if (existingUser.userType === "raw") {
@@ -1458,9 +1574,12 @@ export const googleRegister = async (userData) => {
 
 				// Send welcome email if email is provided
 				if (newUser.email) {
-					const emailContent = await ejs.renderFile("./public/welcomeEmail.ejs", {
-						firstName: newUser.firstName || "New User",
-					});
+					const emailContent = await ejs.renderFile(
+						"./public/welcomeEmail.ejs",
+						{
+							firstName: newUser.firstName || "New User",
+						}
+					);
 
 					await transporter.sendMail({
 						from: `"The Capital Hub" <${process.env.EMAIL_USER}>`,
@@ -1912,7 +2031,7 @@ export const getInactiveFounders = async () => {
 		// Get all startups with their founders
 		const startups = await StartUpModel.find().populate({
 			path: "founderId",
-			select: "email firstName lastName"
+			select: "email firstName lastName",
 		});
 
 		const inactiveFounders7Days = [];
@@ -1926,7 +2045,7 @@ export const getInactiveFounders = async () => {
 
 			// Get founder's posts
 			const founderPosts = await PostModel.find({
-				user: founder._id
+				user: founder._id,
 			}).sort({ createdAt: -1 });
 
 			if (founderPosts.length > 0) {
@@ -1939,7 +2058,7 @@ export const getInactiveFounders = async () => {
 					inactiveFounders7Days.push({
 						user_first_name: founder.firstName,
 						user_last_name: founder.lastName,
-						user_email: founder.email
+						user_email: founder.email,
 					});
 				}
 
@@ -1948,7 +2067,7 @@ export const getInactiveFounders = async () => {
 					inactiveFounders30Days.push({
 						user_first_name: founder.firstName,
 						user_last_name: founder.lastName,
-						user_email: founder.email
+						user_email: founder.email,
 					});
 				}
 			} else {
@@ -1956,20 +2075,20 @@ export const getInactiveFounders = async () => {
 				inactiveFounders30Days.push({
 					user_first_name: founder.firstName,
 					user_last_name: founder.lastName,
-						user_email: founder.email
+					user_email: founder.email,
 				});
 			}
 		}
 
 		return {
 			inactiveFounders7Days,
-			inactiveFounders30Days
+			inactiveFounders30Days,
 		};
 	} catch (error) {
 		console.error("Error fetching inactive founders:", error);
 		return {
 			status: 500,
-			message: "Error fetching inactive founders"
+			message: "Error fetching inactive founders",
 		};
 	}
 };
@@ -2062,13 +2181,15 @@ async function generateOrderId() {
 export const createSubscriptionPayment = async (userData) => {
 	try {
 		const orderId = await generateOrderId();
-		const mobileNumber = userData.mobileNumber.replace('+91', '');
+		const mobileNumber = userData.mobileNumber.replace("+91", "");
 		const request = {
-			order_amount: 1999.00, 
+			order_amount: 1999.0,
 			order_currency: "INR",
 			order_id: orderId,
 			customer_details: {
-				customer_id: userData.firstName + (mobileNumber? mobileNumber : userData.mobileNumber),
+				customer_id:
+					userData.firstName +
+					(mobileNumber ? mobileNumber : userData.mobileNumber),
 				customer_name: `${userData.firstName} ${userData.lastName}`.trim(),
 				customer_email: userData.email.toLowerCase().trim(),
 				customer_phone: userData.mobileNumber.trim(),
@@ -2094,7 +2215,7 @@ export const createSubscriptionPayment = async (userData) => {
 export const verifySubscriptionPayment = async (orderId, userId) => {
 	try {
 		const response = await Cashfree.PGOrderFetchPayments("2023-08-01", orderId);
-		
+
 		if (!response?.data) {
 			throw new Error("Invalid response from payment gateway");
 		}
@@ -2138,22 +2259,22 @@ export const createUserAndInitiatePayment = async (userData) => {
 			email,
 			phoneNumber: mobileNumber,
 			userType,
-			isInvestor: userType === 'investor',
+			isInvestor: userType === "investor",
 			userName: `${firstName}.${lastName}`,
-			userStatus: "active"
+			userStatus: "active",
 		});
 
 		await user.save();
 
 		// Create payment session
 		const paymentResponse = await createSubscriptionPayment(userData);
-		
+
 		return {
 			status: 200,
 			data: {
 				...paymentResponse.data,
-				userId: user._id
-			}
+				userId: user._id,
+			},
 		};
 	} catch (error) {
 		console.error(error);
@@ -2162,20 +2283,20 @@ export const createUserAndInitiatePayment = async (userData) => {
 };
 
 export const getRawUsers = async () => {
-	try{
-		const rawUsers = await UserModel.find({userType: "raw"});
+	try {
+		const rawUsers = await UserModel.find({ userType: "raw" });
 		return rawUsers;
-	}catch(error){
+	} catch (error) {
 		console.error(error);
 		throw new Error(error.message);
 	}
 };
 
 export const getRawUserById = async (userId) => {
-	try{
-		const rawUser = await UserModel.findOne({_id: userId, userType: "raw"});
+	try {
+		const rawUser = await UserModel.findOne({ _id: userId, userType: "raw" });
 		return rawUser;
-	}catch(error){
+	} catch (error) {
 		console.error(error);
 		throw new Error(error.message);
 	}
