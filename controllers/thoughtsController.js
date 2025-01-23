@@ -1,5 +1,7 @@
 import {
 	createQuestion,
+	updateQuestion,
+	deleteQuestion,
 	upvoteDownvoteQuestion,
 	getQuestions,
 	getQuestionById,
@@ -7,6 +9,8 @@ import {
 	upvoteDownvoteAnswer,
 	addSuggestionsToAnswer,
 	likeUnlikeSuggestionOfAnswer,
+	deleteAnswer,
+	updateAnswerOfQuestion,
 } from "../services/thoughtsService.js";
 
 export const createQuestionController = async (req, res) => {
@@ -19,6 +23,36 @@ export const createQuestionController = async (req, res) => {
 		res.status(500).send({
 			status: 500,
 			message: "An error occurred while updating availability.",
+		});
+	}
+};
+
+export const updateQuestionController = async (req, res) => {
+	try {
+		const { userId } = req;
+		const { questionId } = req.params;
+		const response = await updateQuestion(userId, req.body, questionId);
+		res.status(response.status).send(response);
+	} catch (error) {
+		console.error(error);
+		res.status(500).send({
+			status: 500,
+			message: "An error occurred while updating question.",
+		});
+	}
+};
+
+export const deleteQuestionController = async (req, res) => {
+	try {
+		const { userId } = req;
+		const { questionId } = req.params;
+		const response = await deleteQuestion(userId, questionId);
+		res.status(response.status).send(response);
+	} catch (error) {
+		console.error(error);
+		res.status(500).send({
+			status: 500,
+			message: "An error occurred while deleting question.",
 		});
 	}
 };
@@ -137,6 +171,43 @@ export const likeUnlikeSuggestionOfAnswerController = async (req, res) => {
 		res.status(500).send({
 			status: 500,
 			message: "An error occurred while answering questions.",
+		});
+	}
+};
+
+export const deleteAnswerController = async (req, res) => {
+	try {
+		const { userId } = req;
+		const { questionId } = req.params;
+		const { answerId } = req.params;
+		const response = await deleteAnswer(userId, questionId, answerId);
+		res.status(response.status).send(response);
+	} catch (error) {
+		console.error(error);
+		res.status(500).send({
+			status: 500,
+			message: "An error occurred while deleting answer of question.",
+		});
+	}
+};
+
+export const updateAnswerOfQuestionController = async (req, res) => {
+	try {
+		const { userId } = req;
+		const { questionId } = req.params;
+		const { answerId } = req.params;
+		const response = await updateAnswerOfQuestion(
+			userId,
+			questionId,
+			answerId,
+			req.body
+		);
+		res.status(response.status).send(response);
+	} catch (error) {
+		console.error(error);
+		res.status(500).send({
+			status: 500,
+			message: "An error occurred while updating answer of question.",
 		});
 	}
 };

@@ -34,6 +34,87 @@ export const createQuestion = async (userId, data) => {
 		};
 	}
 };
+
+export const updateQuestion = async (userId, data, questionId) => {
+	try {
+		const { question, industry } = data;
+		// first check, user associated with this userId is admin or not
+		const user = await UserModel.findOne({ _id: userId });
+
+		//  isAdmin(boolean state)
+		if (user.isAdmin === false) {
+			return {
+				status: 403,
+				message: "You are not authorized to update this question",
+			};
+		}
+
+		const response = await ThoughtModel.findOneAndUpdate(
+			{ _id: questionId },
+			{
+				question: question,
+				industry: industry,
+			},
+			{ new: true }
+		);
+
+		if (!response) {
+			return {
+				status: 500,
+				message: "Something went wrong",
+			};
+		}
+
+		return {
+			status: 200,
+			data: response,
+			message: "Question updated successfully",
+		};
+	} catch (error) {
+		console.log(error);
+		return {
+			status: 500,
+			message: "Something went wrong",
+		};
+	}
+};
+
+export const deleteQuestion = async (userId, questionId) => {
+	try {
+		// first check, user associated with this userId is admin or not
+		const user = await UserModel.findOne({ _id: userId });
+
+		//  isAdmin(boolean state)
+		if (user.isAdmin === false) {
+			return {
+				status: 403,
+				message: "You are not authorized to delete this question",
+			};
+		}
+
+		const response = await ThoughtModel.findByIdAndDelete(questionId);
+
+		if (!response) {
+			return {
+				status: 500,
+				message: "Something went wrong",
+			};
+		}
+
+		return {
+			status: 200,
+			data: response,
+			message: "Question deleted successfully",
+		};
+	} catch (error) {
+		console.log(error);
+		return {
+			status: 500,
+			message: "Something went wrong",
+		};
+	}
+};
+
 export const upvoteDownvoteQuestion = async (userId, questionId) => {
 	try {
 		// Validate inputs
@@ -450,6 +531,64 @@ export const likeUnlikeSuggestionOfAnswer = async (
 		};
 	} catch (error) {
 		console.error("Error in likeSuggestionOfAnswer:", error);
+		return {
+			status: 500,
+			message: "Something went wrong",
+		};
+	}
+};
+
+export const deleteAnswer = async (userId, questionId, answerId) => {
+	try {
+		const response = await ThoughtModel.findOneAndUpdate(
+			{ _id: questionId, "answer._id": answerId },
+			{ $pull: { answer: { _id: answerId } } }
+		);
+		return {
+			status: 200,
+			data: response,
+			message: "Answer deleted successfully",
+		};
+	} catch (error) {
+		console.error(error);
+		return {
+			status: 500,
+			message: "Something went wrong",
+		};
+	}
+};
+
+export const updateAnswerOfQuestion = async (
+	userId,
+	questionId,
+	answerId,
+	data
+) => {
+	try {
+		const { answer } = data;
+
+		// first check, user associated with this userId is admin or not
+		const user = await UserModel.findOne({ _id: userId });
+
+		//  isAdmin(boolean state)
+		if (user.isAdmin === false) {
+			return {
+				status: 403,
+				message: "You are not authorized to update this answer of question",
+			};
+		}
+
+		const response = await ThoughtModel.findOneAndUpdate(
+			{ _id: questionId, "answer._id": answerId },
+			{ $set: { "answer.$.answer": answer } }
+		);
+		return {
+			status: 200,
+			data: response,
+			message: "Answer updated successfully",
+		};
+	} catch (error) {
+		console.error(error);
 		return {
 			status: 500,
 			message: "Something went wrong",

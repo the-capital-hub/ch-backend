@@ -2,7 +2,7 @@ import express from "express";
 
 import {
 	getUsersController,
-	getUserByUsernameController,
+	getUserByUsernameOrOneLinkIdController,
 	getUserAnalyticsDataByUserNameController,
 	registerUserController,
 	loginUserController,
@@ -57,7 +57,7 @@ import {
 	getRawUsersController,
 	getRawUserByIdController,
 	getUserByPhoneNumberController,
-	getUserByEmailController
+	getUserByEmailController,
 } from "../controllers/userData.js";
 
 import { authenticateToken } from "../middlewares/authenticateToken.js";
@@ -75,8 +75,14 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 // http://localhost:8080/users/
 router.post("/add_user", upload.single("file"), createUser);
-router.post("/create-subscription-payment", createSubscriptionPaymentController);
-router.post("/verify-subscription-payment", verifySubscriptionPaymentController);
+router.post(
+	"/create-subscription-payment",
+	createSubscriptionPaymentController
+);
+router.post(
+	"/verify-subscription-payment",
+	verifySubscriptionPaymentController
+);
 router.post("/register-with-payment", registerWithPaymentController);
 router.post("/send_otp", sendOTP);
 router.post("/verify_otp", verifyOtp);
@@ -113,9 +119,14 @@ router.post("/linkedInLogin", linkedInLoginController);
 router.get("/getUserAnalytics/:userId", getUserAnalyticsController);
 router.get("/getUserProfileViews/:userId", getUserProfileViewsController);
 
+// used in public user/founder profile
 router.post("/getUserByUserName", getUserAnalyticsDataByUserNameController);
-router.get("/getUserByUsername/:username", getUserByUsernameController);
 
+// used in private user/founder profile
+router.get(
+	"/getUserByUserNameOrOneLinkId/:username/:onelinkId",
+	getUserByUsernameOrOneLinkIdController
+);
 
 // Authorized routes below
 router.use(authenticateToken);
@@ -170,6 +181,5 @@ router.get("/getUserAvailability", getUserAvaibilityController);
 
 //send report email
 router.post("/report", sendReportEmail);
-
 
 export default router;

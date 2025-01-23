@@ -361,7 +361,7 @@ export const getRecommendations = async (userId) => {
 			userId,
 			...(user.connections || []),
 			...(user.connectionsSent || []),
-			...(user.connectionsReceived || [])
+			...(user.connectionsReceived || []),
 		];
 
 		// First try to get recommendations from connections of connections
@@ -374,21 +374,22 @@ export const getRecommendations = async (userId) => {
 		}
 
 		// Filter unique recommendations and remove excluded users
-		recommendations = [...new Set(recommendations)]
-			.filter(id => !excludeUsers.includes(id.toString()));
+		recommendations = [...new Set(recommendations)].filter(
+			(id) => !excludeUsers.includes(id.toString())
+		);
 
 		// Get user details with posts count
 		let users = [];
 		if (recommendations.length > 0) {
 			users = await UserModel.find(
-				{ 
+				{
 					_id: { $in: recommendations },
-					userStatus: "active"
+					userStatus: "active",
 				},
-				"firstName lastName profilePicture designation posts"
+				"firstName lastName profilePicture designation posts userName oneLinkId"
 			)
-			.sort({ connections: -1 })  // Sort by number of posts
-			.limit(10);
+				.sort({ connections: -1 }) // Sort by number of posts
+				.limit(10);
 		}
 
 		// If we don't have enough recommendations, get other active users
@@ -396,12 +397,12 @@ export const getRecommendations = async (userId) => {
 			const additionalUsers = await UserModel.find(
 				{
 					_id: { $nin: excludeUsers },
-					userStatus: "active"
+					userStatus: "active",
 				},
-				"firstName lastName profilePicture designation posts"
+				"firstName lastName profilePicture designation posts userName oneLinkId"
 			)
-			.sort({ posts: -1 })
-			.limit(10 - users.length);
+				.sort({ posts: -1 })
+				.limit(10 - users.length);
 
 			users = [...users, ...additionalUsers];
 		}
