@@ -20,7 +20,8 @@ import {
   sendOneLinkRequestController,
   getOneLinkRequestController,
   approveOneLinkRequestController,
-  rejectOneLinkRequestController
+  rejectOneLinkRequestController,
+  updateStartUpController
 } from "../controllers/startUpController.js";
 import { authenticateToken } from "../middlewares/authenticateToken.js";
 
@@ -74,5 +75,5 @@ router.post("/sendOneLinkRequest", sendOneLinkRequestController);
 router.get("/getOneLinkRequest/:startUpId", getOneLinkRequestController);
 router.post("/approveOneLinkRequest", approveOneLinkRequestController);
 router.post("/rejectOneLinkRequest", rejectOneLinkRequestController);
-
+router.put("/updateStartUp", updateStartUpController);
 export default router;

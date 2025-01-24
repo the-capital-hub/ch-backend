@@ -339,3 +339,12 @@ export const addPastInvestments = async (investorId, data) => {
     };
   }
 };
+
+export const updateInvestor = async (investorData) => {
+  try {
+    const investor = await InvestorModel.findByIdAndUpdate(investorData._id, investorData, { new: true });
+    return investor;
+  } catch (error) {
+    console.error("Error updating Investor:", error);
+  }
+}

@@ -24,3 +24,14 @@ export const getVc = async(vcId) =>{
         }
 
     }
+
+    export const updateVc = async (vcData) => {
+        try{
+            const vc = await VCModel.findByIdAndUpdate(vcData._id, vcData, { new: true });
+            return vc;
+        }
+        catch(error){
+            console.log(error);
+            return error;
+        }
+    }

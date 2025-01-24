@@ -695,3 +695,26 @@ export const rejectOneLinkRequest = async (startUpId, requestId) => {
     console.error("Error rejecting one link request:", error);
   }
 }
+
+export const updateStartUp = async (startUpData) => {
+  try {
+    const startUp = await StartUpModel.findByIdAndUpdate(startUpData._id, startUpData, { new: true });
+    if(!startUp){
+      return {
+        status: 404,
+        message: "StartUp not found.",
+      };
+    }
+    return {
+      status: 200,
+      message: "StartUp updated successfully.",
+      data: startUp,
+    };
+  } catch (error) {
+    console.error("Error updating StartUp:", error);
+    return {
+      status: 500,
+      message: "An error occurred while updating StartUp.",
+    };
+  }
+}

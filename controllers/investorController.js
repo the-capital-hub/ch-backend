@@ -8,6 +8,7 @@ import {
   getOnePager,
   getInvestorBySearch,
   addPastInvestments,
+  updateInvestor
 } from "../services/investorService.js";
 
 //create Investor
@@ -146,3 +147,15 @@ export const getInvestorBySearchController = async (req, res) => {
     });
   }
 };
+
+export const updateInvestorController = async (req, res) => {
+  try {
+    const investorData = req.body;
+    const response = await updateInvestor(investorData);
+    res.send({status:true, message: "Investor updated", data:response})
+  }
+  catch(error){
+    console.log(error);
+    res.send({status:false, message:"an error occured", data: error});
+  }
+}
