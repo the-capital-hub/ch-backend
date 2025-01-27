@@ -356,9 +356,9 @@ export const loginUserService = async ({ phoneNumber, password }) => {
 //get User by id
 export const getUserById = async (userId) => {
 	try {
-		let user = await UserModel.findOne({ oneLinkId: userId }).populate(
-			"startUp"
-		);
+		let user = await UserModel.findOne({ oneLinkId: userId })
+			.populate("startUp")
+			.populate("eventId");
 		if (!user) {
 			user = await UserModel.findById(userId).populate(["startUp", "investor"]);
 		}
@@ -2305,17 +2305,17 @@ export const getRawUserById = async (userId) => {
 export const getUserByPhoneNumber = async (phoneNumber) => {
 	try {
 		// Format the input phone number by removing '+91' if present
-		const formattedInput = phoneNumber.replace('+91', '');
-		
+		const formattedInput = phoneNumber.replace("+91", "");
+
 		// Create an array of possible formats to check
 		const possibleFormats = [
-			formattedInput,         // without +91
+			formattedInput, // without +91
 			`+91${formattedInput}`, // with +91
 		];
 
 		// Find user with any of the possible phone number formats
 		const user = await UserModel.findOne({
-			phoneNumber: { $in: possibleFormats }
+			phoneNumber: { $in: possibleFormats },
 		});
 
 		return user;
@@ -2326,10 +2326,10 @@ export const getUserByPhoneNumber = async (phoneNumber) => {
 };
 
 export const getUserByEmail = async (email) => {
-	try{
-		const user = await UserModel.findOne({email});
+	try {
+		const user = await UserModel.findOne({ email });
 		return user;
-	}catch(error){
+	} catch (error) {
 		console.error(error);
 		throw new Error(error.message);
 	}

@@ -205,7 +205,7 @@ export const createUser = async (req, res) => {
 export const getUserAnalyticsDataByUserNameController = async (req, res) => {
 	//getUserAnalyticsDataByUserName
 	try {
-		const { username } = req.body;
+		const { username } = req.params;
 
 		if (!username) {
 			console.log("Username not provided in the request body.");

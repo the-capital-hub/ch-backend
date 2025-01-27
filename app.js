@@ -64,6 +64,8 @@ const logResponseTime = responseTime((req, res, time) => {
 const allowedOrigins = [
 	"http://localhost:3000",
 	"https://www.thecapitalhub.in",
+	"https://thecapitalhub.in",
+	"https://api.thecapitalhub.in",
 ];
 
 dotenv.config();
@@ -151,7 +153,13 @@ cron.schedule("0 0 * * *", async () => {
 		const now = moment().toISOString();
 		const result = await UserModel.updateMany(
 			{ linkedinTokenExpiryDate: { $lt: now } }, // Find users with expired tokens
-			{ $unset: { linkedinId: "", linkedinTokenExpiryDate: "", linkedinToken: "" } } // Remove the fields from the document
+			{
+				$unset: {
+					linkedinId: "",
+					linkedinTokenExpiryDate: "",
+					linkedinToken: "",
+				},
+			} // Remove the fields from the document
 		);
 		console.log(`Expired tokens removed from ${result.modifiedCount} users.`);
 

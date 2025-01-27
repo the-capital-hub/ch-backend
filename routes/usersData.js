@@ -120,7 +120,10 @@ router.get("/getUserAnalytics/:userId", getUserAnalyticsController);
 router.get("/getUserProfileViews/:userId", getUserProfileViewsController);
 
 // used in public user/founder profile
-router.post("/getUserByUserName", getUserAnalyticsDataByUserNameController);
+router.get(
+	"/getUserByUserName/:username",
+	getUserAnalyticsDataByUserNameController
+);
 
 // used in private user/founder profile
 router.get(
