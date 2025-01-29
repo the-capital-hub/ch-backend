@@ -51,7 +51,10 @@ export const getNotificationsByUserId = async (userId) => {
         (notification.achievementId && notification.achievementId !== null) ||
         (notification.meetingId && notification.meetingId !== null) ||
         (notification.connection && notification.connection !== null) ||
-        (notification.post && notification.post !== null)
+        (notification.post && notification.post !== null) ||
+        (notification.type == "onlinkRequest") ||
+        (notification.type == "onlinkRequestAccepted") ||
+        (notification.type == "onlinkRequestRejected")
       );
     });
 
