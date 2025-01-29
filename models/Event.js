@@ -2,6 +2,10 @@ import mongoose from "mongoose";
 
 const eventSchema = new mongoose.Schema(
 	{
+		isActive: {
+			type: Boolean,
+			default: true,
+		},
 		title: {
 			type: String,
 			required: true,

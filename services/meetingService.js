@@ -146,7 +146,7 @@ export const getEvents = async (userId) => {
 	}
 };
 
-export const deleteEvent = async (userId, eventId) => {
+export const disableEvent = async (userId, eventId) => {
 	try {
 		const user = await UserModel.findOne({ _id: userId });
 		if (!user) {
@@ -155,14 +155,16 @@ export const deleteEvent = async (userId, eventId) => {
 				message: "User  not found",
 			};
 		}
-		await UserModel.findByIdAndUpdate(user._id, {
-			$pull: { eventId: eventId },
-		});
+		// await UserModel.findByIdAndUpdate(user._id, {
+		// 	$pull: { eventId: eventId },
+		// });
 
-		const response = await EventModel.findOneAndDelete({
-			userId: user._id,
-			_id: eventId,
-		});
+		// update the isActive field to false
+		const response = await EventModel.findOneAndUpdate(
+			{ _id: eventId, userId: user._id },
+			{ $set: { isActive: false } },
+			{ new: true }
+		);
 
 		if (!response) {
 			return {
@@ -276,6 +278,15 @@ export const scheduleMeeting = async (data) => {
 		// console.log("data with Payment status", data);
 		// Fetch the event data from the database
 		const eventData = await EventModel.find({ _id: data.meetingData.eventId });
+
+		// Checking is event active or not
+		if (!eventData.isActive) {
+			return {
+				status: 200,
+				message: "Event is disabled. No more meetings can be scheduled.",
+			};
+		}
+
 		// Fetch the user data from the database
 		const user = await UserModel.findOne({
 			userName: data.meetingData.username,

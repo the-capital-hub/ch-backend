@@ -407,6 +407,7 @@ export const verifyPayment = async (req, res) => {
 					amount: payment.payment_amount,
 					status: paymentStatus,
 					NotificationEmailSent: true,
+					priorityDM: priorityDM,
 				},
 			};
 		}

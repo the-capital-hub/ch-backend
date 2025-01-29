@@ -6,7 +6,7 @@ import {
 	updateAvaibilityController,
 	createEventController,
 	getEventsController,
-	deleteEventController,
+	disableEventController,
 	getSchedulePageDataController,
 	scheduleMeetingController,
 	cancelSheduledMeetingController,
@@ -35,7 +35,7 @@ router.post("/updateAvailability", updateAvaibilityController);
 router.post("/createEvent", createEventController);
 // Foe getting user specific events
 router.get("/getEvents", getEventsController);
-router.delete("/deleteEvent/:eventId", deleteEventController);
+router.patch("/disableEvent/:eventId", disableEventController);
 
 // for fetching user, event and user availability
 
