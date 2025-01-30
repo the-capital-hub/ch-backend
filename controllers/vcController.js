@@ -1,5 +1,5 @@
 import { VCModel } from "../models/VC.js";
-import { addVc, getVc } from "../services/vcService.js";
+import { addVc, getVc, updateVc } from "../services/vcService.js";
 
  export const getVcController = async(req,res)=>{
     try{
@@ -18,6 +18,18 @@ res.status(500).send(error);
         const vcData = req.body;
         const response = await addVc(vcData);
         res.send({status:true, message: "Vc added", data:response})
+    }
+    catch(error){
+        console.log(error);
+        res.send({status:false, message:"an error occured", data: error});
+    }
+ }
+
+ export const updateVcController = async(req,res)=>{
+    try{
+        const vcData = req.body;
+        const response = await updateVc(vcData);
+        res.send({status:true, message: "Vc updated", data:response})
     }
     catch(error){
         console.log(error);

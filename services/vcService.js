@@ -24,3 +24,29 @@ export const getVc = async(vcId) =>{
         }
 
     }
+
+    export const updateVc = async (vcData) => {
+        try {
+            // Filter out empty string values and people array from vcData
+            const filteredData = Object.fromEntries(
+                Object.entries(vcData).filter(([key, value]) => {
+                    if (key === 'people') return false; 
+                    if (Array.isArray(value)) {
+                        return value.length > 0;
+                    }
+                    return value !== '';
+                })
+            );
+            
+            const vc = await VCModel.findByIdAndUpdate(
+                vcData._id,
+                filteredData,
+                { new: true }
+            );
+            return vc;
+        }
+        catch(error) {
+            console.log(error);
+            return error;
+        }
+    }

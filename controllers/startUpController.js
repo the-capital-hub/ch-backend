@@ -17,7 +17,8 @@ import {
   sendOneLinkRequest,
   getOneLinkRequest,
   approveOneLinkRequest,
-  rejectOneLinkRequest
+  rejectOneLinkRequest,
+  updateStartUp
 } from "../services/startUpService.js";
 import { getStartUpData } from "../services/userService.js";
 
@@ -305,3 +306,16 @@ export const rejectOneLinkRequestController = async (req, res) => {
   const response = await rejectOneLinkRequest(startUpId, userId);
   res.status(response.status).send(response);
 };
+
+
+export const updateStartUpController = async(req,res)=>{
+  try{
+    const startUpData = req.body;
+        const response = await updateStartUp(startUpData);
+        res.status(response.status).send(response)
+  }
+  catch(error){
+    console.log(error);
+    res.send({status:false, message:"an error occured", data: error});
+  }
+}   

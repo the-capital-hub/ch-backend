@@ -6,6 +6,7 @@ import { cloudinary } from "../utils/uploadImage.js";
 import { MilestoneModel } from "../models/Milestones.js";
 import ejs from "ejs";
 import nodemailer from "nodemailer";
+import { addNotification } from "./notificationService.js";
 
 const transporter = nodemailer.createTransport({
 	service: "gmail",
@@ -606,6 +607,14 @@ export const sendOneLinkRequest = async (startUpId, userId) => {
 
     await startUp.save();
 
+    // Add notification for the founder
+    const response = await addNotification(
+      founder._id,
+      userId,
+      "onlinkRequest"
+    );
+    console.log(response);
+
     return {
       status: 200,
       message: "One Link request sent successfully.",
@@ -657,12 +666,24 @@ export const approveOneLinkRequest = async (startUpId, requestId) => {
         message: "StartUp not found.",
       };
     }
+    
+    let requestingUserId;
     startUp.oneLinkRequest.forEach((request) => {
       if(request._id.toString() === requestId.toString()){
         request.status = "approved";
+        requestingUserId = request.userId;
       }
     }); 
+    
     await startUp.save();
+
+    // Add notification for the requesting user
+    await addNotification(
+      requestingUserId,
+      startUp.founderId,
+      "onlinkRequestAccepted"
+    );
+
     return {
       status: 200,
       message: "One Link request approved successfully.",
@@ -670,7 +691,7 @@ export const approveOneLinkRequest = async (startUpId, requestId) => {
   } catch (error) {
     console.error("Error approving one link request:", error);
   }
-}
+};
 
 export const rejectOneLinkRequest = async (startUpId, requestId) => {
   try {
@@ -681,17 +702,52 @@ export const rejectOneLinkRequest = async (startUpId, requestId) => {
         message: "StartUp not found.",
       };
     }
+    
+    let requestingUserId;
     startUp.oneLinkRequest.forEach((request) => { 
       if(request._id.toString() === requestId.toString()){
         request.status = "rejected";
+        requestingUserId = request.userId;
       }
     });
+    
     await startUp.save();
+
+    // Add notification for the requesting user
+    await addNotification(
+      requestingUserId,
+      startUp.founderId,
+      "onlinkRequestRejected"
+    );
+
     return {
       status: 200,
       message: "One Link request rejected successfully.",
     };
   } catch (error) {
     console.error("Error rejecting one link request:", error);
+  }
+};
+
+export const updateStartUp = async (startUpData) => {
+  try {
+    const startUp = await StartUpModel.findByIdAndUpdate(startUpData._id, startUpData, { new: true });
+    if(!startUp){
+      return {
+        status: 404,
+        message: "StartUp not found.",
+      };
+    }
+    return {
+      status: 200,
+      message: "StartUp updated successfully.",
+      data: startUp,
+    };
+  } catch (error) {
+    console.error("Error updating StartUp:", error);
+    return {
+      status: 500,
+      message: "An error occurred while updating StartUp.",
+    };
   }
 }

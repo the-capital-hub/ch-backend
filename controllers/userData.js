@@ -479,6 +479,64 @@ export const verifyOtp = async (req, res) => {
 	}
 };
 
+// export const sendOTP = async (req, res) => {
+// 	try {
+// 		const response = await axios.post(
+// 			"https://auth.otpless.app/auth/v1/initiate/otp",
+// 			{
+// 				phoneNumber: req.body.phoneNumber,
+// 				otpLength: 6,
+// 				channel: "SMS",
+// 				expiry: 600,
+// 			},
+// 			{
+// 				headers: {
+// 					clientId: process.env.CLIENT_ID,
+// 					clientSecret: process.env.CLIENT_SECRET,
+// 					"Content-Type": "application/json",
+// 				},
+// 			}
+// 		);
+// 		return res.status(200).send({
+// 			orderId: response.data.orderId,
+// 			message: "OTP Send successfully",
+// 		});
+// 	} catch (err) {
+// 		console.log(err);
+// 		return res.status(500).json({ error: "Failed to fetch data" });
+// 	}
+// };
+// export const verifyOtp = async (req, res) => {
+// 	try {
+// 		const response = await axios.post(
+// 			"https://auth.otpless.app/auth/v1/verify/otp",
+// 			{
+// 				orderId: req.body.orderId,
+// 				otp: req.body.otp,
+// 				phoneNumber: req.body.phoneNumber,
+// 			},
+// 			{
+// 				headers: {
+// 					clientId: process.env.CLIENT_ID,
+// 					clientSecret: process.env.CLIENT_SECRET,
+// 					"Content-Type": "application/json",
+// 				},
+// 			}
+// 		);
+// 		if (response.data.isOTPVerified) {
+// 			return res.status(200).send({
+// 				isOTPVerified: response.data.isOTPVerified,
+// 				message: "OTP verified",
+// 			});
+// 		} else {
+// 			throw new Error("OTP Verification failed");
+// 		}
+// 	} catch (err) {
+// 		console.log(err);
+// 		return res.status(500).json({ error: "Failed to fetch data" });
+// 	}
+// };
+
 export const blockUserController = async (req, res) => {
 	try {
 		const { userId, blockedUserId } = req.body;
