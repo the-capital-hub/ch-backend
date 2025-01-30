@@ -384,6 +384,30 @@ export const getUserById = async (userId) => {
 	}
 };
 
+export const getUserByOneLinkId = async (oneLinkId) => {
+	try {
+		const user = await UserModel.findOne({ oneLinkId: oneLinkId });
+		if (!user) {
+			return {
+				status: 404,
+				message: "User not found.",
+			};
+		}
+		user.password = undefined;
+		return {
+			status: 200,
+			message: "User details retrieved successfully.",
+			user: user,
+		};
+	} catch (error) {
+		console.error("Error getting user:", error);
+		return {
+			status: 500,
+			message: "An error occurred while getting the user.",
+		};
+	}
+};
+
 // get User email by id
 export const getUserEmailById = async (userId) => {
 	try {
