@@ -20,6 +20,23 @@ const oAuth2Client = new OAuth2(
 	"https://thecapitalhub.in/investor/onelink"
 );
 
+export const getAvailability = async (userId) => {
+	try {
+		const response = await AvailabilityModel.findOne({ userId: userId });
+		return {
+			status: 200,
+			message: "Availability fetched successfully",
+			data: response,
+		};
+	} catch (error) {
+		console.error("Error fetching availability:", error);
+		return {
+			status: 500,
+			message: "An error occurred while fetching availability.",
+		};
+	}
+};
+
 export const updateAvailability = async (userId, data) => {
 	console.log(userId);
 	console.log(data);
@@ -35,19 +52,18 @@ export const updateAvailability = async (userId, data) => {
 
 		// Convert day names to lowercase to match the schema
 		const normalizedDayAvailability = data.dayAvailability.map((day) => ({
-			day: day.day.toLowerCase(), // Normalize to lowercase
-			startTime: day.start, // Change to match schema
-			endTime: day.end, // Change to match schema
-			enabled: day.enabled,
+			day: day.day.toLowerCase(),
+			startTime: day.startTime,
+			endTime: day.endTime,
 		}));
 
 		const response = await AvailabilityModel.findOneAndUpdate(
-			{ userId: user._id }, // Ensure you're querying with userId
+			{ userId: user._id },
 			{
 				$set: {
 					userId: user._id,
 					dayAvailability: normalizedDayAvailability,
-					minimumGap: parseInt(data.minGap, 10), // Change to match schema
+					minimumGap: parseInt(data.minimumGap, 10),
 				},
 			},
 			{ upsert: true, new: true }

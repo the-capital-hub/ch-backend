@@ -4,6 +4,7 @@ import { authenticateToken } from "../middlewares/authenticateToken.js";
 
 import {
 	updateAvaibilityController,
+	getAvailabilityDataController,
 	createEventController,
 	getEventsController,
 	disableEventController,
@@ -31,7 +32,8 @@ router.get(
 
 // Authorized routes below
 router.use(authenticateToken);
-router.post("/updateAvailability", updateAvaibilityController);
+router.get("/getAvailability", getAvailabilityDataController);
+router.patch("/updateAvailability", updateAvaibilityController);
 router.post("/createEvent", createEventController);
 // Foe getting user specific events
 router.get("/getEvents", getEventsController);
