@@ -2,6 +2,10 @@ import mongoose from "mongoose";
 
 const eventSchema = new mongoose.Schema(
 	{
+		isActive: {
+			type: Boolean,
+			default: true,
+		},
 		title: {
 			type: String,
 			required: true,
@@ -40,7 +44,7 @@ const eventSchema = new mongoose.Schema(
 		communityId: {
 			type: mongoose.Schema.Types.ObjectId,
 			ref: "NewCommunities",
-		}
+		},
 	},
 	{
 		timestamps: true,

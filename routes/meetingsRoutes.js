@@ -4,9 +4,10 @@ import { authenticateToken } from "../middlewares/authenticateToken.js";
 
 import {
 	updateAvaibilityController,
+	getAvailabilityDataController,
 	createEventController,
 	getEventsController,
-	deleteEventController,
+	disableEventController,
 	getSchedulePageDataController,
 	scheduleMeetingController,
 	cancelSheduledMeetingController,
@@ -31,11 +32,12 @@ router.get(
 
 // Authorized routes below
 router.use(authenticateToken);
-router.post("/updateAvailability", updateAvaibilityController);
+router.get("/getAvailability", getAvailabilityDataController);
+router.patch("/updateAvailability", updateAvaibilityController);
 router.post("/createEvent", createEventController);
 // Foe getting user specific events
 router.get("/getEvents", getEventsController);
-router.delete("/deleteEvent/:eventId", deleteEventController);
+router.patch("/disableEvent/:eventId", disableEventController);
 
 // for fetching user, event and user availability
 

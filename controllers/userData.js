@@ -47,6 +47,7 @@ import {
 	getRawUserById,
 	getUserByPhoneNumber,
 	getUserByEmail,
+	getUserByOneLinkId,
 } from "../services/userService.js";
 
 import { sendMail } from "../utils/mailHelper.js";
@@ -205,7 +206,7 @@ export const createUser = async (req, res) => {
 export const getUserAnalyticsDataByUserNameController = async (req, res) => {
 	//getUserAnalyticsDataByUserName
 	try {
-		const { username } = req.body;
+		const { username } = req.params;
 
 		if (!username) {
 			console.log("Username not provided in the request body.");
@@ -850,6 +851,22 @@ export const getUserByIdController = async (req, res) => {
 		});
 	}
 };
+
+export const getUserByOneLinkIdController = async (req, res) => {
+	try {
+		const { oneLinkId } = req.params;
+		console.log("oneLinkId", oneLinkId);
+		const response = await getUserByOneLinkId(oneLinkId);
+		res.status(response.status).send(response);
+	} catch (error) {
+		console.error(error);
+		res.status(500).send({
+			status: 500,
+			message: "An error occurred while fetching the user.",
+		});
+	}
+};
+
 export const getUserEmailByIdController = async (req, res) => {
 	try {
 		const userData = await getUserEmailById(req.params.userId);

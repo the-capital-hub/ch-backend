@@ -58,6 +58,7 @@ import {
 	getRawUserByIdController,
 	getUserByPhoneNumberController,
 	getUserByEmailController,
+	getUserByOneLinkIdController,
 } from "../controllers/userData.js";
 
 import { authenticateToken } from "../middlewares/authenticateToken.js";
@@ -103,6 +104,7 @@ router.get("/getRawUserById/:userId", getRawUserByIdController);
 router.patch("/updateUserById/:userId", updateUserByIdController);
 router.post("/getUserByPhoneNumber", getUserByPhoneNumberController);
 router.post("/getUserByEmail", getUserByEmailController);
+router.get("/getUserByOneLinkId/:oneLinkId", getUserByOneLinkIdController);
 
 router.post("/requestPasswordReset", requestPasswordResetController);
 
@@ -120,7 +122,10 @@ router.get("/getUserAnalytics/:userId", getUserAnalyticsController);
 router.get("/getUserProfileViews/:userId", getUserProfileViewsController);
 
 // used in public user/founder profile
-router.post("/getUserByUserName", getUserAnalyticsDataByUserNameController);
+router.get(
+	"/getUserByUserName/:username",
+	getUserAnalyticsDataByUserNameController
+);
 
 // used in private user/founder profile
 router.get(

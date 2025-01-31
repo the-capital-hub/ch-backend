@@ -20,6 +20,23 @@ const oAuth2Client = new OAuth2(
 	"https://thecapitalhub.in/investor/onelink"
 );
 
+export const getAvailability = async (userId) => {
+	try {
+		const response = await AvailabilityModel.findOne({ userId: userId });
+		return {
+			status: 200,
+			message: "Availability fetched successfully",
+			data: response,
+		};
+	} catch (error) {
+		console.error("Error fetching availability:", error);
+		return {
+			status: 500,
+			message: "An error occurred while fetching availability.",
+		};
+	}
+};
+
 export const updateAvailability = async (userId, data) => {
 	console.log(userId);
 	console.log(data);
@@ -35,19 +52,18 @@ export const updateAvailability = async (userId, data) => {
 
 		// Convert day names to lowercase to match the schema
 		const normalizedDayAvailability = data.dayAvailability.map((day) => ({
-			day: day.day.toLowerCase(), // Normalize to lowercase
-			startTime: day.start, // Change to match schema
-			endTime: day.end, // Change to match schema
-			enabled: day.enabled,
+			day: day.day.toLowerCase(),
+			startTime: day.startTime,
+			endTime: day.endTime,
 		}));
 
 		const response = await AvailabilityModel.findOneAndUpdate(
-			{ userId: user._id }, // Ensure you're querying with userId
+			{ userId: user._id },
 			{
 				$set: {
 					userId: user._id,
 					dayAvailability: normalizedDayAvailability,
-					minimumGap: parseInt(data.minGap, 10), // Change to match schema
+					minimumGap: parseInt(data.minimumGap, 10),
 				},
 			},
 			{ upsert: true, new: true }
@@ -146,7 +162,7 @@ export const getEvents = async (userId) => {
 	}
 };
 
-export const deleteEvent = async (userId, eventId) => {
+export const disableEvent = async (userId, eventId) => {
 	try {
 		const user = await UserModel.findOne({ _id: userId });
 		if (!user) {
@@ -155,14 +171,16 @@ export const deleteEvent = async (userId, eventId) => {
 				message: "User  not found",
 			};
 		}
-		await UserModel.findByIdAndUpdate(user._id, {
-			$pull: { eventId: eventId },
-		});
+		// await UserModel.findByIdAndUpdate(user._id, {
+		// 	$pull: { eventId: eventId },
+		// });
 
-		const response = await EventModel.findOneAndDelete({
-			userId: user._id,
-			_id: eventId,
-		});
+		// update the isActive field to false
+		const response = await EventModel.findOneAndUpdate(
+			{ _id: eventId, userId: user._id },
+			{ $set: { isActive: false } },
+			{ new: true }
+		);
 
 		if (!response) {
 			return {
@@ -276,6 +294,15 @@ export const scheduleMeeting = async (data) => {
 		// console.log("data with Payment status", data);
 		// Fetch the event data from the database
 		const eventData = await EventModel.find({ _id: data.meetingData.eventId });
+
+		// Checking is event active or not
+		if (!eventData.isActive) {
+			return {
+				status: 200,
+				message: "Event is disabled. No more meetings can be scheduled.",
+			};
+		}
+
 		// Fetch the user data from the database
 		const user = await UserModel.findOne({
 			userName: data.meetingData.username,

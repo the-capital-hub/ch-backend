@@ -1,8 +1,9 @@
 import {
+	getAvailability,
 	updateAvailability,
 	createEvent,
 	getEvents,
-	deleteEvent,
+	disableEvent,
 	getSchedulePageData,
 	scheduleMeeting,
 	cancelSheduledMeeting,
@@ -12,6 +13,20 @@ import {
 	createPaymentSession,
 	verifyPayment,
 } from "../services/meetingService.js";
+
+export const getAvailabilityDataController = async (req, res) => {
+	try {
+		const { userId } = req;
+		const response = await getAvailability(userId);
+		res.status(response.status).send(response);
+	} catch (error) {
+		console.error(error);
+		res.status(500).send({
+			status: 500,
+			message: "An error occurred while fetching availability.",
+		});
+	}
+};
 
 export const updateAvaibilityController = async (req, res) => {
 	try {
@@ -55,17 +70,17 @@ export const getEventsController = async (req, res) => {
 	}
 };
 
-export const deleteEventController = async (req, res) => {
+export const disableEventController = async (req, res) => {
 	try {
 		const { userId } = req;
 		const { eventId } = req.params;
-		const response = await deleteEvent(userId, eventId);
+		const response = await disableEvent(userId, eventId);
 		res.status(response.status).send(response);
 	} catch (error) {
 		console.error(error);
 		res.status(500).send({
 			status: 500,
-			message: "An error occurred while updating availability.",
+			message: "An error occurred while disabling event.",
 		});
 	}
 };
