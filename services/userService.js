@@ -1551,7 +1551,6 @@ export const googleRegister = async (userData) => {
 		let profileImage;
 
 		if (userData?.profilePicture) {
-			// If user provided an image, upload to cloudinary
 			const { secure_url } = await cloudinary.uploader.upload(
 				userData.profilePicture,
 				{
@@ -1562,16 +1561,13 @@ export const googleRegister = async (userData) => {
 			);
 			profileImage = secure_url;
 		} else {
-			// If no image provided, use random default image
-			const randomNum = Math.floor(Math.random() * 4) + 1; // Random number between 1-4
+			const randomNum = Math.floor(Math.random() * 4) + 1;
 			profileImage = `https://ch-social-link-logo.s3.ap-south-1.amazonaws.com/image-${randomNum}.png`;
 		}
 
-		// Add the profile image to user data
 		userData.profilePicture = profileImage;
 
 		let existingUser;
-		// Check for existing user by email or phone number
 		if (userData.email) {
 			existingUser = await UserModel.findOne({ email: userData.email });
 		}
@@ -1581,24 +1577,20 @@ export const googleRegister = async (userData) => {
 			});
 		}
 
-		// Check if the existing user is of type 'raw'
 		if (existingUser) {
 			if (existingUser.userType === "raw") {
 				console.log("raw");
-				// Merge previous data with new data
 				const mergedData = {
-					...existingUser.toObject(), // Convert existing user to plain object
-					...userData, // Merge with new data
+					...existingUser.toObject(),
+					...userData,
 				};
-				// Delete the existing user
 				await UserModel.deleteOne({ _id: existingUser._id });
-				// Create a new user with merged data
 				const newUser = new UserModel(mergedData);
 				await newUser.save();
 
-				// Send welcome email if email is provided
+				// Send welcome email to user
 				if (newUser.email) {
-					const emailContent = await ejs.renderFile(
+					const welcomeEmailContent = await ejs.renderFile(
 						"./public/welcomeEmail.ejs",
 						{
 							firstName: newUser.firstName || "New User",
@@ -1609,7 +1601,26 @@ export const googleRegister = async (userData) => {
 						from: `"The Capital Hub" <${process.env.EMAIL_USER}>`,
 						to: newUser.email,
 						subject: "Welcome to CapitalHub!",
-						html: emailContent,
+						html: welcomeEmailContent,
+					});
+
+					// Send notification email to dev team
+					const notificationEmailContent = await ejs.renderFile(
+						"./public/newUserNotification.ejs",
+						{
+							firstName: newUser.firstName,
+							lastName: newUser.lastName,
+							email: newUser.email,
+							phoneNumber: newUser.phoneNumber,
+							userType: newUser.userType,
+						}
+					);
+
+					await transporter.sendMail({
+						from: `"The Capital Hub System" <${process.env.EMAIL_USER}>`,
+						to: "dev.capitalhub@gmail.com",
+						subject: "New User Registration Alert",
+						html: notificationEmailContent,
 					});
 				}
 
@@ -1625,7 +1636,6 @@ export const googleRegister = async (userData) => {
 					token: token,
 				};
 			} else {
-				// If user is not of type 'raw', return a message indicating user already exists
 				return {
 					status: 202,
 					message: "User already exists.",
@@ -1633,13 +1643,12 @@ export const googleRegister = async (userData) => {
 			}
 		}
 
-		// If no existing user, proceed with normal registration
 		const newUser = new UserModel(userData);
 		await newUser.save();
 
-		// Send welcome email if email is provided
+		// Send welcome email to user
 		if (userData.email) {
-			const emailContent = await ejs.renderFile("./public/welcomeEmail.ejs", {
+			const welcomeEmailContent = await ejs.renderFile("./public/welcomeEmail.ejs", {
 				firstName: newUser.firstName || "New User",
 			});
 
@@ -1647,9 +1656,30 @@ export const googleRegister = async (userData) => {
 				from: `"The Capital Hub" <${process.env.EMAIL_USER}>`,
 				to: newUser.email,
 				subject: "Welcome to CapitalHub!",
-				html: emailContent,
+				html: welcomeEmailContent,
 			});
 		}
+
+		// Send notification email to dev team
+		const notificationEmailContent = await ejs.renderFile(
+			"./public/newUserNotification.ejs",
+			{
+				firstName: newUser?.firstName,
+				lastName: newUser?.lastName,
+				email: newUser?.email,
+				phoneNumber: newUser?.phoneNumber,
+				userType: newUser?.userType
+			}
+		);
+
+		const notificationEmail = await transporter.sendMail({
+			from: `"The Capital Hub System" <${process.env.EMAIL_USER}>`,
+			to: "dev.capitalhub@gmail.com",
+			subject: "New User Registration Alert",
+			html: notificationEmailContent,
+		});
+		console.log("notificationEmail", notificationEmail);
+
 
 		const token = jwt.sign(
 			{ userId: newUser._id, email: newUser.email },
