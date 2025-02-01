@@ -55,7 +55,7 @@ export const getSentPendingConnectionRequests = async (userId) => {
 			status: "pending",
 		}).populate(
 			"receiver",
-			"firstName lastName profilePicture designation startUp investor oneLinkId"
+			"firstName lastName profilePicture designation startUp investor userName"
 		);
 		for (const request of sentRequests) {
 			await request.receiver.populate("startUp investor");
@@ -131,7 +131,7 @@ export const getPendingConnectionRequests = async (userId) => {
 		})
 			.populate(
 				"sender",
-				"firstName lastName profilePicture designation startUp investor oneLinkId"
+				"firstName lastName profilePicture designation startUp investor oneLinkId userName"
 			)
 			.sort({ _id: "-1" });
 		return {
@@ -272,7 +272,7 @@ export const getUserConnections = async (userId) => {
 	try {
 		const user = await UserModel.findById(userId).populate(
 			"connections",
-			"firstName lastName profilePicture designation startUp investor oneLinkId"
+			"firstName lastName profilePicture designation startUp investor oneLinkId userName"
 		);
 		for (const connection of user.connections) {
 			await connection.populate("startUp investor");
