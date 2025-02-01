@@ -59,6 +59,7 @@ import {
 	getUserByPhoneNumberController,
 	getUserByEmailController,
 	getUserByOneLinkIdController,
+	sendWelcomeEmailController,
 } from "../controllers/userData.js";
 
 import { authenticateToken } from "../middlewares/authenticateToken.js";
@@ -186,5 +187,7 @@ router.get("/getUserAvailability", getUserAvaibilityController);
 
 //send report email
 router.post("/report", sendReportEmail);
+
+router.post("/send-welcome-email/:userId", sendWelcomeEmailController);
 
 export default router;

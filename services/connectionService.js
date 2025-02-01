@@ -1,6 +1,7 @@
 import { ConnectionModel } from "../models/Connection.js";
 import { UserModel } from "../models/User.js";
 import { addNotification, deleteNotification } from "./notificationService.js";
+import mongoose from 'mongoose';
 
 //send connect request
 export const sendConnectionRequest = async (senderId, receiverId) => {
@@ -356,13 +357,13 @@ export const getRecommendations = async (userId) => {
 			};
 		}
 
-		// Get users to exclude
+		// Get users to exclude - Convert all IDs to strings for consistent comparison
 		const excludeUsers = [
 			userId,
 			...(user.connections || []),
 			...(user.connectionsSent || []),
 			...(user.connectionsReceived || []),
-		];
+		].map(id => id.toString());
 
 		// First try to get recommendations from connections of connections
 		let recommendations = [];
@@ -374,9 +375,9 @@ export const getRecommendations = async (userId) => {
 		}
 
 		// Filter unique recommendations and remove excluded users
-		recommendations = [...new Set(recommendations)].filter(
-			(id) => !excludeUsers.includes(id.toString())
-		);
+		recommendations = [...new Set(recommendations)]
+			.map(id => id.toString())
+			.filter(id => !excludeUsers.includes(id));
 
 		// Get user details with posts count
 		let users = [];
@@ -388,7 +389,7 @@ export const getRecommendations = async (userId) => {
 				},
 				"firstName lastName profilePicture designation posts userName oneLinkId"
 			)
-				.sort({ connections: -1 }) // Sort by number of posts
+				.sort({ connections: -1 })
 				.limit(10);
 		}
 
@@ -396,7 +397,7 @@ export const getRecommendations = async (userId) => {
 		if (users.length < 5) {
 			const additionalUsers = await UserModel.find(
 				{
-					_id: { $nin: excludeUsers },
+					_id: { $nin: excludeUsers.map(id => new mongoose.Types.ObjectId(id)) },
 					userStatus: "active",
 				},
 				"firstName lastName profilePicture designation posts userName oneLinkId"

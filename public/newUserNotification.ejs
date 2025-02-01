@@ -42,6 +42,11 @@
     <p>A new user has registered on CapitalHub:</p>
     
     <div class="user-details">
+      <% if (profilePicture) { %>
+      <div class="profile-picture">
+        <img src="<%= profilePicture %>" alt="Profile Picture" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; margin-bottom: 15px;">
+      </div>
+      <% } %>
       <div class="detail-row">
         <span class="label">Name:</span> <%= firstName %> <%= lastName %>
       </div>
@@ -56,6 +61,11 @@
       <div class="detail-row">
         <span class="label">User Type:</span> <%= userType %>
       </div>
+      <% if (registeredFrom) { %>
+        <div class="detail-row">
+          <span class="label">Registered From:</span> <%= registeredFrom %>
+        </div>
+      <% } %>
       <div class="detail-row">
         <span class="label">Registration Time:</span> <%= new Date().toLocaleString() %>
       </div>

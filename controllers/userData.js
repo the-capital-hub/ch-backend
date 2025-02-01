@@ -48,6 +48,7 @@ import {
 	getUserByPhoneNumber,
 	getUserByEmail,
 	getUserByOneLinkId,
+	sendWelcomeEmail,
 } from "../services/userService.js";
 
 import { sendMail } from "../utils/mailHelper.js";
@@ -1659,5 +1660,19 @@ export const getUserByEmailController = async (req, res) => {
 	} catch (error) {
 		console.error(error);
 		return res.status(500).send({ status: 500, message: error.message });
+	}
+};
+
+export const sendWelcomeEmailController = async (req, res) => {
+	try {
+		const { userId } = req.params;
+		const response = await sendWelcomeEmail(userId);
+		res.status(response.status).json(response);
+	} catch (error) {
+		console.error("Error in welcome email controller:", error);
+		res.status(500).json({
+			status: 500,
+			message: "An error occurred while sending welcome emails",
+		});
 	}
 };

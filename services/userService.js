@@ -1608,11 +1608,13 @@ export const googleRegister = async (userData) => {
 					const notificationEmailContent = await ejs.renderFile(
 						"./public/newUserNotification.ejs",
 						{
-							firstName: newUser.firstName,
-							lastName: newUser.lastName,
+							firstName: newUser.firstName || "Raw User",
+							lastName: newUser.lastName || "Raw User",
 							email: newUser.email,
 							phoneNumber: newUser.phoneNumber,
-							userType: newUser.userType,
+							userType: newUser.userType || "raw user",
+							registeredFrom: newUser.registeredFrom || "Raw User",
+							profilePicture: newUser.profilePicture || "",
 						}
 					);
 
@@ -1659,27 +1661,6 @@ export const googleRegister = async (userData) => {
 				html: welcomeEmailContent,
 			});
 		}
-
-		// Send notification email to dev team
-		const notificationEmailContent = await ejs.renderFile(
-			"./public/newUserNotification.ejs",
-			{
-				firstName: newUser?.firstName,
-				lastName: newUser?.lastName,
-				email: newUser?.email,
-				phoneNumber: newUser?.phoneNumber,
-				userType: newUser?.userType
-			}
-		);
-
-		const notificationEmail = await transporter.sendMail({
-			from: `"The Capital Hub System" <${process.env.EMAIL_USER}>`,
-			to: "dev.capitalhub@gmail.com",
-			subject: "New User Registration Alert",
-			html: notificationEmailContent,
-		});
-		console.log("notificationEmail", notificationEmail);
-
 
 		const token = jwt.sign(
 			{ userId: newUser._id, email: newUser.email },
@@ -2386,5 +2367,61 @@ export const getUserByEmail = async (email) => {
 	} catch (error) {
 		console.error(error);
 		throw new Error(error.message);
+	}
+};
+
+export const sendWelcomeEmail = async (userId) => {
+	try {
+		const user = await UserModel.findById(userId);
+		if (!user) {
+			return {
+				status: 404,
+				message: "User not found",
+			};
+		}
+		console.log("user", user);
+		// Send welcome email to user
+		const welcomeEmailContent = await ejs.renderFile("./public/welcomeEmail.ejs", {
+			firstName: user.firstName || "New User",
+		});
+
+		await transporter.sendMail({
+			from: `"The Capital Hub" <${process.env.EMAIL_USER}>`,
+			to: user.email,
+			subject: "Welcome to CapitalHub!",
+			html: welcomeEmailContent,
+		});
+
+		// Send notification email to dev team
+		const notificationEmailContent = await ejs.renderFile(
+			"./public/newUserNotification.ejs",
+			{
+				firstName: user.firstName,
+				lastName: user.lastName,
+				email: user.email,
+				phoneNumber: user.phoneNumber,
+				userType: user.userType,
+				registeredFrom: user.registeredFrom,
+				profilePicture: user.profilePicture,
+			}
+		);
+
+		await transporter.sendMail({
+			from: `"The Capital Hub System" <${process.env.EMAIL_USER}>`,
+			to: "dev.capitalhub@gmail.com",
+			subject: "New User Registration Alert",
+			html: notificationEmailContent,
+		});
+
+		return {
+			status: 200,
+			message: "Welcome emails sent successfully",
+		};
+	} catch (error) {
+		console.error("Error sending welcome emails:", error);
+		return {
+			status: 500,
+			message: "An error occurred while sending welcome emails",
+		};
 	}
 };
