@@ -28,12 +28,11 @@ const thoughtSchema = new mongoose.Schema(
 					type: mongoose.Schema.Types.ObjectId,
 					ref: "Users",
 				},
-				upvotes: [
-					{
-						type: mongoose.Schema.Types.ObjectId,
-						ref: "Users",
-					},
-				],
+				upvotes: {
+					type: [mongoose.Schema.Types.ObjectId],
+					ref: "Users",
+					default: []
+				},
 				suggestions: [
 					{
 						comment: {
