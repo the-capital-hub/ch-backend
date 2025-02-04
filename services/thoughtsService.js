@@ -342,7 +342,8 @@ export const addAnswerToQuestion = async (userId, questionId, data) => {
 						user: user._id,
 					},
 				},
-			}
+			},
+			{ new: true }
 		);
 
 		if (!response) {
@@ -352,9 +353,12 @@ export const addAnswerToQuestion = async (userId, questionId, data) => {
 			};
 		}
 
+		// Get the newly added answer from the response
+		const newAnswer = response.answer[response.answer.length - 1];
+
 		return {
 			status: 200,
-			data: response,
+			data: newAnswer, // Return only the newly added answer
 			message: "Answer added successfully",
 		};
 	} catch (error) {
@@ -455,9 +459,14 @@ export const addSuggestionsToAnswer = async (
 			};
 		}
 
+		// Get the newly added suggestion from the answer
+		const newSuggestion = answer.answer
+			.find((a) => a._id.toString() === answerId)
+			.suggestions.slice(-1)[0];
+
 		return {
 			status: 200,
-			data: answer,
+			data: newSuggestion, // Return only the newly added suggestion
 			message: "Suggestion added successfully",
 		};
 	} catch (error) {
