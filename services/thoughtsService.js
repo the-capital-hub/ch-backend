@@ -394,13 +394,15 @@ export const upvoteDownvoteAnswer = async (userId, questionId, answerId) => {
 
 		// Find the specific answer
 		const answer = question.answer.find((a) => a._id.toString() === answerId);
+		console.log(answer);
 		const hasUpvoted = answer.upvotes.includes(userId);
+		console.log(hasUpvoted);
 
 		// Update the answer - remove upvote if exists, add if it doesn't
 		const updatedQuestion = await ThoughtModel.findOneAndUpdate(
 			{ _id: questionId, "answer._id": answerId },
 			{
-				[hasUpvoted ? "$pull" : "$addToSet"]: {
+				[hasUpvoted ? "$pull" : "$push"]: {
 					"answer.$.upvotes": userId,
 				},
 			},

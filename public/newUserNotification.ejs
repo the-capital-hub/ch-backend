@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New User Registration</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      padding: 20px;
+    }
+    .container {
+      background-color: #ffffff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    h2 {
+      color: #333;
+    }
+    .user-details {
+      margin: 20px 0;
+      padding: 15px;
+      background-color: #f8f9fa;
+      border-radius: 5px;
+    }
+    .detail-row {
+      margin-bottom: 10px;
+    }
+    .label {
+      font-weight: bold;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>New User Registration Alert</h2>
+    
+    <p>A new user has registered on CapitalHub:</p>
+    
+    <div class="user-details">
+      <% if (profilePicture) { %>
+      <div class="profile-picture">
+        <img src="<%= profilePicture %>" alt="Profile Picture" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; margin-bottom: 15px;">
+      </div>
+      <% } %>
+      <div class="detail-row">
+        <span class="label">Name:</span> <%= firstName %> <%= lastName %>
+      </div>
+      <div class="detail-row">
+        <span class="label">Email:</span> <%= email %>
+      </div>
+      <% if (phoneNumber) { %>
+      <div class="detail-row">
+        <span class="label">Phone:</span> <%= phoneNumber %>
+      </div>
+      <% } %>
+      <div class="detail-row">
+        <span class="label">User Type:</span> <%= userType %>
+      </div>
+      <% if (registeredFrom) { %>
+        <div class="detail-row">
+          <span class="label">Registered From:</span> <%= registeredFrom %>
+        </div>
+      <% } %>
+      <div class="detail-row">
+        <span class="label">Registration Time:</span> <%= new Date().toLocaleString() %>
+      </div>
+    </div>
+
+    <p>Please review the new registration and take any necessary actions.</p>
+
+    <p>Best regards,<br>CapitalHub System</p>
+  </div>
+</body>
+</html> 

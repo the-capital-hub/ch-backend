@@ -64,7 +64,8 @@ const postSchema = new Schema(
       type: Number,
     },
     postType:{
-      type:String
+      type:String,
+      default: "public"
     },
     pollOptions: [pollOptionsSchema],
     allow_multiple_answers: {

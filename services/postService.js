@@ -106,7 +106,7 @@ export const allPostsData = async (page, perPage) => {
 			.populate({
 				path: "user",
 				select:
-					"firstName lastName designation profilePicture location investor startUp oneLinkId isSubscribed isTopVoice",
+					"firstName lastName designation profilePicture location investor startUp oneLinkId isSubscribed isTopVoice userName",
 				populate: [
 					{
 						path: "investor",
@@ -125,7 +125,7 @@ export const allPostsData = async (page, perPage) => {
 					{
 						path: "user",
 						select:
-							"firstName lastName designation profilePicture investor startUp oneLinkId",
+							"firstName lastName designation profilePicture investor startUp oneLinkId userName",
 						populate: [
 							{
 								path: "investor",
@@ -163,7 +163,7 @@ export const singlePostData = async (_id) => {
 			.populate({
 				path: "user",
 				select:
-					"firstName lastName designation profilePicture investor startUp oneLinkId",
+					"firstName lastName designation profilePicture investor startUp oneLinkId userName",
 				populate: [
 					{
 						path: "investor",
@@ -182,7 +182,7 @@ export const singlePostData = async (_id) => {
 					{
 						path: "user",
 						select:
-							"firstName lastName designation profilePicture investor startUp oneLinkId",
+							"firstName lastName designation profilePicture investor startUp oneLinkId userName",
 						populate: [
 							{
 								path: "investor",
@@ -198,12 +198,12 @@ export const singlePostData = async (_id) => {
 			})
 			.populate({
 				path: "likes",
-				select: "firstName lastName profilePicture", // Adjust fields as needed
+				select: "firstName lastName profilePicture userName", // Adjust fields as needed
 			})
 			.populate({
 				path: "comments.user", // Populate user field in comments
 				select:
-					"firstName lastName designation profilePicture investor startUp oneLinkId",
+					"firstName lastName designation profilePicture investor startUp oneLinkId userName",
 				populate: [
 					{
 						path: "investor",
@@ -217,7 +217,7 @@ export const singlePostData = async (_id) => {
 			})
 			.populate({
 				path: "pollOptions.votes", // Populate votes in pollOptions
-				select: "firstName lastName profilePicture", // Adjust fields as needed
+				select: "firstName lastName profilePicture userName", // Adjust fields as needed
 			});
 
 		return post;
@@ -480,7 +480,7 @@ export const getSavedPostsByCollection = async (userId, collectionName) => {
 		const savedPosts = await PostModel.find({ _id: { $in: postIds } })
 			.populate({
 				path: "user",
-				select: "firstName lastName profilePicture designation oneLinkId",
+				select: "firstName lastName profilePicture designation oneLinkId userName",
 			})
 			.exec();
 		for (let i = 0; i < savedPosts.length; i++) {
@@ -490,7 +490,7 @@ export const getSavedPostsByCollection = async (userId, collectionName) => {
 				)
 					.populate({
 						path: "user",
-						select: "firstName lastName profilePicture designation oneLinkId",
+						select: "firstName lastName profilePicture designation oneLinkId userName",
 					})
 					.exec();
 				savedPosts[i].resharedPostId = resharedPost;
@@ -569,7 +569,7 @@ export const getUsersWhoLikedPost = async (postId) => {
 		}
 		const likedUsers = await PostModel.findById(postId).populate({
 			path: "likes",
-			select: "firstName lastName profilePicture oneLinkId",
+			select: "firstName lastName profilePicture oneLinkId userName",
 		});
 		return {
 			status: 200,
