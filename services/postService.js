@@ -1131,3 +1131,101 @@ export const voteForPoll = async (postId, optionId, userId) => {
         throw error;
     }
 };
+
+export const allPublicPosts = async (page, perPage) => {
+    try {
+        const skip = (page - 1) * perPage;
+
+        const allPosts = await PostModel.find({ postType: "public" })
+            .populate({
+                path: "user",
+                select: "firstName lastName designation profilePicture location investor startUp oneLinkId isSubscribed isTopVoice userName",
+                populate: [
+                    {
+                        path: "investor",
+                        select: "companyName",
+                    },
+                    {
+                        path: "startUp",
+                        select: "company",
+                    },
+                ],
+            })
+            .populate({
+                path: "resharedPostId",
+                select: "",
+                populate: [
+                    {
+                        path: "user",
+                        select: "firstName lastName designation profilePicture investor startUp oneLinkId userName",
+                        populate: [
+                            {
+                                path: "investor",
+                                select: "companyName",
+                            },
+                            {
+                                path: "startUp",
+                                select: "company",
+                            },
+                        ],
+                    },
+                ],
+            })
+            .sort({ _id: -1 })
+            .skip(skip)
+            .limit(perPage);
+
+        return allPosts;
+    } catch (error) {
+        throw new Error("Error fetching public posts");
+    }
+};
+
+export const allCommunityPosts = async (page, perPage) => {
+    try {
+        const skip = (page - 1) * perPage;
+
+        const allPosts = await PostModel.find({ postType: "community" })
+            .populate({
+                path: "user",
+                select: "firstName lastName designation profilePicture location investor startUp oneLinkId isSubscribed isTopVoice userName",
+                populate: [
+                    {
+                        path: "investor",
+                        select: "companyName",
+                    },
+                    {
+                        path: "startUp",
+                        select: "company",
+                    },
+                ],
+            })
+            .populate({
+                path: "resharedPostId",
+                select: "",
+                populate: [
+                    {
+                        path: "user",
+                        select: "firstName lastName designation profilePicture investor startUp oneLinkId userName",
+                        populate: [
+                            {
+                                path: "investor",
+                                select: "companyName",
+                            },
+                            {
+                                path: "startUp",
+                                select: "company",
+                            },
+                        ],
+                    },
+                ],
+            })
+            .sort({ _id: -1 })
+            .skip(skip)
+            .limit(perPage);
+
+        return allPosts;
+    } catch (error) {
+        throw new Error("Error fetching community posts");
+    }
+};

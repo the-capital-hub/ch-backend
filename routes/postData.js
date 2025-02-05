@@ -25,11 +25,15 @@ import {
 	getPost,
 	sharePostLinkedinController,
 	voteForPollController,
+	getAllPublicPosts,
+	getAllCommunityPosts,
 } from "../controllers/postController.js";
 import { authenticateToken } from "../middlewares/authenticateToken.js";
 const router = express.Router();
 
 router.get("/getposts", getAllPosts);
+router.get("/getPublicPosts", getAllPublicPosts);
+router.get("/getCommunityPosts", getAllCommunityPosts);
 router.get("/getSinglePost/:id", getSinglePost);
 
 router.use(authenticateToken);

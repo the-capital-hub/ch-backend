@@ -26,6 +26,8 @@ import {
 	getPostById,
 	sharePostOnLinkedin,
 	voteForPoll,
+	allPublicPosts,
+	allCommunityPosts,
 } from "../services/postService.js";
 import { UserModel } from "../models/User.js";
 
@@ -90,6 +92,42 @@ export const getAllPosts = async (req, res) => {
 			});
 		} else {
 			res.send({ message: "Posts fetched successfully", data });
+		}
+	} catch (err) {
+		res.status(500).send(err);
+	}
+};
+
+export const getAllPublicPosts = async (req, res) => {
+	try {
+		const { page, perPage } = req.query;
+		const pageNumber = parseInt(page) || 1;
+		const postsPerPage = parseInt(perPage) || 10;
+		const data = await allPublicPosts(pageNumber, postsPerPage);
+		if (!data.length) {
+			res.status(404).send({
+				message: "No Public Posts yet",
+			});
+		} else {
+			res.send({ message: "Public Posts fetched successfully", data });
+		}
+	} catch (err) {
+		res.status(500).send(err);
+	}
+};
+
+export const getAllCommunityPosts = async (req, res) => {
+	try {
+		const { page, perPage } = req.query;
+		const pageNumber = parseInt(page) || 1;
+		const postsPerPage = parseInt(perPage) || 10;
+		const data = await allCommunityPosts(pageNumber, postsPerPage);
+		if (!data.length) {
+			res.status(404).send({
+				message: "No Community Posts yet",
+			});
+		} else {
+			res.send({ message: "Community Posts fetched successfully", data });
 		}
 	} catch (err) {
 		res.status(500).send(err);
