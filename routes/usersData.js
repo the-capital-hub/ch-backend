@@ -60,6 +60,7 @@ import {
 	getUserByEmailController,
 	getUserByOneLinkIdController,
 	sendWelcomeEmailController,
+	checkUsernameAvailabilityController,
 } from "../controllers/userData.js";
 
 import { authenticateToken } from "../middlewares/authenticateToken.js";
@@ -133,6 +134,9 @@ router.get(
 	"/getUserByUserNameOrOneLinkId/:username/:onelinkId",
 	getUserByUsernameOrOneLinkIdController
 );
+
+// Add this route before the authenticated routes
+router.get("/check-username/:username", checkUsernameAvailabilityController);
 
 // Authorized routes below
 router.use(authenticateToken);

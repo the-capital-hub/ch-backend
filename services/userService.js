@@ -425,144 +425,19 @@ export const getUserEmailById = async (userId) => {
 };
 
 // Update User
-// export const updateUserData = async ({ userId, newData }) => {
-// 	try {
-// 		// Handle profile picture upload
-// 		if (newData?.profilePicture) {
-// 			const { secure_url } = await cloudinary.uploader.upload(
-// 				newData.profilePicture,
-// 				{
-// 					folder: `${process.env.CLOUDIANRY_FOLDER}/startUps/logos`,
-// 					format: "webp",
-// 					unique_filename: true,
-// 				}
-// 			);
-// 			newData.profilePicture = secure_url;
-// 		}
-
-// 		// Handle experience logos
-// 		if (newData?.recentExperience && newData.recentExperience.length > 0) {
-// 			for (let i = 0; i < newData.recentExperience.length; i++) {
-// 				const exp = newData.recentExperience[i];
-// 				if (exp.logo && exp.logo.startsWith("data:image")) {
-// 					// Check if it's a new image upload
-// 					const { secure_url } = await cloudinary.uploader.upload(exp.logo, {
-// 						folder: `${process.env.CLOUDIANRY_FOLDER}/startUps/logos`,
-// 						format: "webp",
-// 						unique_filename: true,
-// 					});
-// 					newData.recentExperience[i].logo = secure_url;
-// 				}
-// 			}
-// 		}
-
-// 		// Handle education logos
-// 		if (newData?.recentEducation && newData.recentEducation.length > 0) {
-// 			for (let i = 0; i < newData.recentEducation.length; i++) {
-// 				const edu = newData.recentEducation[i];
-// 				if (edu.logo && edu.logo.startsWith("data:image")) {
-// 					// Check if it's a new image upload
-// 					const { secure_url } = await cloudinary.uploader.upload(edu.logo, {
-// 						folder: `${process.env.CLOUDIANRY_FOLDER}/startUps/logos`,
-// 						format: "webp",
-// 						unique_filename: true,
-// 					});
-// 					newData.recentEducation[i].logo = secure_url;
-// 				}
-// 			}
-// 		}
-
-// 		const data = await UserModel.findByIdAndUpdate(
-// 			userId,
-// 			{ ...newData },
-// 			{ new: true }
-// 		);
-
-// 		return {
-// 			status: 200,
-// 			message: "User updated successfully",
-// 			data,
-// 		};
-// 	} catch (error) {
-// 		console.log(error);
-// 		return {
-// 			status: 500,
-// 			message: "An error occurred while updating the user data.",
-// 		};
-// 	}
-// };
-// export const updateUserData = async ({ userId, newData }) => {
-// 	try {
-// 		// Parallelize profile picture upload if it exists
-// 		if (newData?.profilePicture) {
-// 			const profilePictureUpload = cloudinary.uploader.upload(
-// 				newData.profilePicture,
-// 				{
-// 					folder: `${process.env.CLOUDINARY_FOLDER}/startUps/logos`,
-// 					format: "webp",
-// 					unique_filename: true,
-// 				}
-// 			);
-// 			const { secure_url } = await profilePictureUpload;
-// 			newData.profilePicture = secure_url;
-// 		}
-
-// 		// Parallelize recent experience logo uploads
-// 		if (newData?.recentExperience?.length > 0) {
-// 			const experienceUploadPromises = newData.recentExperience.map(
-// 				async (exp, index) => {
-// 					if (exp.logo && exp.logo.startsWith("data:image")) {
-// 						const { secure_url } = await cloudinary.uploader.upload(exp.logo, {
-// 							folder: `${process.env.CLOUDINARY_FOLDER}/startUps/logos`,
-// 							format: "webp",
-// 							unique_filename: true,
-// 						});
-// 						newData.recentExperience[index].logo = secure_url;
-// 					}
-// 				}
-// 			);
-// 			await Promise.all(experienceUploadPromises); // Wait for all experience logo uploads to complete
-// 		}
-
-// 		// Parallelize recent education logo uploads
-// 		if (newData?.recentEducation?.length > 0) {
-// 			const educationUploadPromises = newData.recentEducation.map(
-// 				async (edu, index) => {
-// 					if (edu.logo && edu.logo.startsWith("data:image")) {
-// 						const { secure_url } = await cloudinary.uploader.upload(edu.logo, {
-// 							folder: `${process.env.CLOUDINARY_FOLDER}/startUps/logos`,
-// 							format: "webp",
-// 							unique_filename: true,
-// 						});
-// 						newData.recentEducation[index].logo = secure_url;
-// 					}
-// 				}
-// 			);
-// 			await Promise.all(educationUploadPromises); // Wait for all education logo uploads to complete
-// 		}
-
-// 		// Update user data in the database
-// 		const data = await UserModel.findByIdAndUpdate(
-// 			userId,
-// 			{ ...newData },
-// 			{ new: true }
-// 		);
-
-// 		return {
-// 			status: 200,
-// 			message: "User updated successfully",
-// 			data,
-// 		};
-// 	} catch (error) {
-// 		console.error("Error updating user data:", error);
-// 		return {
-// 			status: 500,
-// 			message: "An error occurred while updating the user data.",
-// 		};
-// 	}
-// };
 export const updateUserData = async ({ userId, newData }) => {
 	try {
+		// If userName is being updated, check if it already exists
+		if (newData.userName) {
+			const existingUser = await UserModel.findOne({ userName: newData.userName });
+			if (existingUser && existingUser._id.toString() !== userId) {
+				return {
+					status: 400,
+					message: "Username already exists",
+				};
+			}
+		}
+
 		const uploadPromises = [];
 
 		// Helper function to handle image uploads
@@ -616,7 +491,7 @@ export const updateUserData = async ({ userId, newData }) => {
 		// Wait for all uploads to complete
 		await Promise.all(uploadPromises);
 
-		// Update user data in the database
+		// Update user data in the database only if username check passed
 		const data = await UserModel.findByIdAndUpdate(
 			userId,
 			{ $set: newData },
@@ -2422,6 +2297,60 @@ export const sendWelcomeEmail = async (userId) => {
 		return {
 			status: 500,
 			message: "An error occurred while sending welcome emails",
+		};
+	}
+};
+
+export const checkUsernameAvailability = async (username) => {
+	try {
+		// Check if username exists
+		const existingUser = await UserModel.findOne({ userName: username });
+		
+		if (!existingUser) {
+			return {
+				status: 200,
+				available: true,
+				message: "Username is available",
+			};
+		}
+
+		// If username exists, generate suggestions
+		const baseName = username.replace(/[0-9]+$/, ''); // Remove any trailing numbers
+		const suggestions = [];
+		
+		// Generate suggestions with random numbers
+		for (let i = 0; i < 5; i++) {
+			const randomNum = Math.floor(Math.random() * 1000);
+			suggestions.push(`${baseName}${randomNum}`);
+		}
+		
+		// Add suggestions with dots if name has multiple parts
+		if (baseName.includes('_')) {
+			const parts = baseName.split('_');
+			suggestions.push(`${parts[0]}.${parts[1]}`);
+			suggestions.push(`${parts[1]}.${parts[0]}`);
+		}
+
+		// Verify suggestions are actually available
+		const availableSuggestions = await Promise.all(
+			suggestions.map(async (suggestion) => {
+				const exists = await UserModel.findOne({ userName: suggestion });
+				return !exists ? suggestion : null;
+			})
+		);
+
+		return {
+			status: 200,
+			available: false,
+			message: "Username is taken",
+			suggestions: availableSuggestions.filter(Boolean)
+		};
+
+	} catch (error) {
+		console.error("Error checking username:", error);
+		return {
+			status: 500,
+			message: "An error occurred while checking username availability",
 		};
 	}
 };

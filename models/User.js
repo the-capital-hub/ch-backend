@@ -65,7 +65,7 @@ const userSchema = new Schema(
 		// Basic Info
 		firstName: { type: String, trim: true },
 		lastName: { type: String, trim: true },
-		userName: { type: String },
+		userName: { type: String, unique: true },
 		email: { type: String, trim: true, lowercase: true },
 		password: { type: String },
 		phoneNumber: { type: String },

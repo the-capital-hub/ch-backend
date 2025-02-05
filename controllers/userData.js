@@ -49,6 +49,7 @@ import {
 	getUserByEmail,
 	getUserByOneLinkId,
 	sendWelcomeEmail,
+	checkUsernameAvailability,
 } from "../services/userService.js";
 
 import { sendMail } from "../utils/mailHelper.js";
@@ -1673,6 +1674,29 @@ export const sendWelcomeEmailController = async (req, res) => {
 		res.status(500).json({
 			status: 500,
 			message: "An error occurred while sending welcome emails",
+		});
+	}
+};
+
+export const checkUsernameAvailabilityController = async (req, res) => {
+	try {
+		const { username } = req.params;
+		
+		if (!username) {
+			return res.status(400).send({
+				status: 400,
+				message: "Username is required"
+			});
+		}
+
+		const response = await checkUsernameAvailability(username);
+		return res.status(response.status).send(response);
+		
+	} catch (error) {
+		console.error("Error in checkUsernameAvailabilityController:", error);
+		return res.status(500).send({
+			status: 500,
+			message: "Internal server error"
 		});
 	}
 };
